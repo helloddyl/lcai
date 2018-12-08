@@ -2274,7 +2274,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     global.__expo = module.exports;
     global.Expo = module.exports;
   }
-},2,[3,4,338,353,361,329,5,362,367,369,370,373,375,377,359,379,381,385,387,389,390,392,394,396,405,407,413,426,427,428,436,437,438,511,512,513,514,515,516,722,723,724,725,434,726,727,728,745,746,747,748,749,820,821,435,822,823,825,830,886,833,835,844,846,847,339,849]);
+},2,[3,4,338,353,361,329,5,362,367,369,370,373,375,377,359,379,381,385,387,389,390,392,394,396,405,407,413,426,427,428,436,437,438,511,512,513,514,515,516,722,723,724,725,434,726,727,728,745,746,747,748,749,820,821,435,822,823,825,830,832,833,835,844,846,847,339,849]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   function _extends() {
     module.exports = _extends = Object.assign || function (target) {
@@ -2711,7 +2711,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   };
   module.exports = ReactNative;
-},5,[6,852,47,156,166,858,859,860,210,857,251,253,254,255,259,212,861,261,862,266,863,855,865,866,216,241,867,273,868,275,232,277,278,282,869,167,286,871,872,172,294,856,180,244,80,873,233,874,300,127,128,181,301,311,312,313,875,314,315,876,57,56,207,83,263,317,189,219,220,297,112,318,280,134,55,319,877,321,878,54,24,879,176,71,324,880,326,33,138,8,853,74,146,327,60,169,328,256]);
+},5,[6,7,47,156,166,247,249,250,210,238,251,253,254,255,259,212,260,261,264,266,267,269,270,271,216,241,272,273,274,275,232,277,278,282,284,167,286,292,293,172,294,179,180,244,80,295,233,296,300,127,128,181,301,311,312,313,307,314,315,316,57,56,207,83,263,317,189,219,220,297,112,318,280,134,55,319,320,321,322,54,24,323,176,71,324,325,326,33,138,8,50,74,146,327,60,169,328,256]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -2746,29 +2746,42 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var NativeModules = _$$_REQUIRE(_dependencyMap[0]);
 
-  var RCTDeviceEventEmitter = _$$_REQUIRE(_dependencyMap[1]);
+  var Promise = _$$_REQUIRE(_dependencyMap[1]);
 
-  var UIManager = _$$_REQUIRE(_dependencyMap[2]);
+  var RCTDeviceEventEmitter = _$$_REQUIRE(_dependencyMap[2]);
 
-  var RCTAccessibilityInfo = NativeModules.AccessibilityInfo;
-  var TOUCH_EXPLORATION_EVENT = 'touchExplorationDidChange';
+  var AccessibilityManager = NativeModules.AccessibilityManager;
+  var VOICE_OVER_EVENT = 'voiceOverDidChange';
+  var ANNOUNCEMENT_DID_FINISH_EVENT = 'announcementDidFinish';
 
   var _subscriptions = new Map();
 
   var AccessibilityInfo = {
     fetch: function fetch() {
       return new Promise(function (resolve, reject) {
-        RCTAccessibilityInfo.isTouchExplorationEnabled(function (resp) {
-          resolve(resp);
-        });
+        AccessibilityManager.getCurrentVoiceOverState(resolve, reject);
       });
     },
     addEventListener: function addEventListener(eventName, handler) {
-      var listener = RCTDeviceEventEmitter.addListener(TOUCH_EXPLORATION_EVENT, function (enabled) {
-        handler(enabled);
-      });
+      var listener;
+
+      if (eventName === 'change') {
+        listener = RCTDeviceEventEmitter.addListener(VOICE_OVER_EVENT, handler);
+      } else if (eventName === 'announcementFinished') {
+        listener = RCTDeviceEventEmitter.addListener(ANNOUNCEMENT_DID_FINISH_EVENT, handler);
+      }
 
       _subscriptions.set(handler, listener);
+
+      return {
+        remove: AccessibilityInfo.removeEventListener.bind(null, eventName, handler)
+      };
+    },
+    setAccessibilityFocus: function setAccessibilityFocus(reactTag) {
+      AccessibilityManager.setAccessibilityFocus(reactTag);
+    },
+    announceForAccessibility: function announceForAccessibility(announcement) {
+      AccessibilityManager.announceForAccessibility(announcement);
     },
     removeEventListener: function removeEventListener(eventName, handler) {
       var listener = _subscriptions.get(handler);
@@ -2780,13 +2793,10 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       listener.remove();
 
       _subscriptions.delete(handler);
-    },
-    setAccessibilityFocus: function setAccessibilityFocus(reactTag) {
-      UIManager.sendAccessibilityEvent(reactTag, UIManager.AccessibilityEventTypes.typeViewFocused);
     }
   };
   module.exports = AccessibilityInfo;
-},852,[8,33,71]);
+},7,[8,28,33]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -3542,6 +3552,359 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
+  var Promise = _$$_REQUIRE(_dependencyMap[0]);
+
+  module.exports = Promise;
+},28,[29]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var Promise = _$$_REQUIRE(_dependencyMap[0]);
+
+  _$$_REQUIRE(_dependencyMap[1]);
+
+  Promise.prototype['finally'] = function (onSettled) {
+    return this.then(onSettled, onSettled);
+  };
+
+  module.exports = Promise;
+},29,[30,32]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var Promise = _$$_REQUIRE(_dependencyMap[0]);
+
+  module.exports = Promise;
+  var TRUE = valuePromise(true);
+  var FALSE = valuePromise(false);
+  var NULL = valuePromise(null);
+  var UNDEFINED = valuePromise(undefined);
+  var ZERO = valuePromise(0);
+  var EMPTYSTRING = valuePromise('');
+
+  function valuePromise(value) {
+    var p = new Promise(Promise._61);
+    p._65 = 1;
+    p._55 = value;
+    return p;
+  }
+
+  Promise.resolve = function (value) {
+    if (value instanceof Promise) return value;
+    if (value === null) return NULL;
+    if (value === undefined) return UNDEFINED;
+    if (value === true) return TRUE;
+    if (value === false) return FALSE;
+    if (value === 0) return ZERO;
+    if (value === '') return EMPTYSTRING;
+
+    if (typeof value === 'object' || typeof value === 'function') {
+      try {
+        var then = value.then;
+
+        if (typeof then === 'function') {
+          return new Promise(then.bind(value));
+        }
+      } catch (ex) {
+        return new Promise(function (resolve, reject) {
+          reject(ex);
+        });
+      }
+    }
+
+    return valuePromise(value);
+  };
+
+  Promise.all = function (arr) {
+    var args = Array.prototype.slice.call(arr);
+    return new Promise(function (resolve, reject) {
+      if (args.length === 0) return resolve([]);
+      var remaining = args.length;
+
+      function res(i, val) {
+        if (val && (typeof val === 'object' || typeof val === 'function')) {
+          if (val instanceof Promise && val.then === Promise.prototype.then) {
+            while (val._65 === 3) {
+              val = val._55;
+            }
+
+            if (val._65 === 1) return res(i, val._55);
+            if (val._65 === 2) reject(val._55);
+            val.then(function (val) {
+              res(i, val);
+            }, reject);
+            return;
+          } else {
+            var then = val.then;
+
+            if (typeof then === 'function') {
+              var p = new Promise(then.bind(val));
+              p.then(function (val) {
+                res(i, val);
+              }, reject);
+              return;
+            }
+          }
+        }
+
+        args[i] = val;
+
+        if (--remaining === 0) {
+          resolve(args);
+        }
+      }
+
+      for (var i = 0; i < args.length; i++) {
+        res(i, args[i]);
+      }
+    });
+  };
+
+  Promise.reject = function (value) {
+    return new Promise(function (resolve, reject) {
+      reject(value);
+    });
+  };
+
+  Promise.race = function (values) {
+    return new Promise(function (resolve, reject) {
+      values.forEach(function (value) {
+        Promise.resolve(value).then(resolve, reject);
+      });
+    });
+  };
+
+  Promise.prototype['catch'] = function (onRejected) {
+    return this.then(null, onRejected);
+  };
+},30,[31]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  function noop() {}
+
+  var LAST_ERROR = null;
+  var IS_ERROR = {};
+
+  function getThen(obj) {
+    try {
+      return obj.then;
+    } catch (ex) {
+      LAST_ERROR = ex;
+      return IS_ERROR;
+    }
+  }
+
+  function tryCallOne(fn, a) {
+    try {
+      return fn(a);
+    } catch (ex) {
+      LAST_ERROR = ex;
+      return IS_ERROR;
+    }
+  }
+
+  function tryCallTwo(fn, a, b) {
+    try {
+      fn(a, b);
+    } catch (ex) {
+      LAST_ERROR = ex;
+      return IS_ERROR;
+    }
+  }
+
+  module.exports = Promise;
+
+  function Promise(fn) {
+    if (typeof this !== 'object') {
+      throw new TypeError('Promises must be constructed via new');
+    }
+
+    if (typeof fn !== 'function') {
+      throw new TypeError('Promise constructor\'s argument is not a function');
+    }
+
+    this._40 = 0;
+    this._65 = 0;
+    this._55 = null;
+    this._72 = null;
+    if (fn === noop) return;
+    doResolve(fn, this);
+  }
+
+  Promise._37 = null;
+  Promise._87 = null;
+  Promise._61 = noop;
+
+  Promise.prototype.then = function (onFulfilled, onRejected) {
+    if (this.constructor !== Promise) {
+      return safeThen(this, onFulfilled, onRejected);
+    }
+
+    var res = new Promise(noop);
+    handle(this, new Handler(onFulfilled, onRejected, res));
+    return res;
+  };
+
+  function safeThen(self, onFulfilled, onRejected) {
+    return new self.constructor(function (resolve, reject) {
+      var res = new Promise(noop);
+      res.then(resolve, reject);
+      handle(self, new Handler(onFulfilled, onRejected, res));
+    });
+  }
+
+  function handle(self, deferred) {
+    while (self._65 === 3) {
+      self = self._55;
+    }
+
+    if (Promise._37) {
+      Promise._37(self);
+    }
+
+    if (self._65 === 0) {
+      if (self._40 === 0) {
+        self._40 = 1;
+        self._72 = deferred;
+        return;
+      }
+
+      if (self._40 === 1) {
+        self._40 = 2;
+        self._72 = [self._72, deferred];
+        return;
+      }
+
+      self._72.push(deferred);
+
+      return;
+    }
+
+    handleResolved(self, deferred);
+  }
+
+  function handleResolved(self, deferred) {
+    setImmediate(function () {
+      var cb = self._65 === 1 ? deferred.onFulfilled : deferred.onRejected;
+
+      if (cb === null) {
+        if (self._65 === 1) {
+          resolve(deferred.promise, self._55);
+        } else {
+          reject(deferred.promise, self._55);
+        }
+
+        return;
+      }
+
+      var ret = tryCallOne(cb, self._55);
+
+      if (ret === IS_ERROR) {
+        reject(deferred.promise, LAST_ERROR);
+      } else {
+        resolve(deferred.promise, ret);
+      }
+    });
+  }
+
+  function resolve(self, newValue) {
+    if (newValue === self) {
+      return reject(self, new TypeError('A promise cannot be resolved with itself.'));
+    }
+
+    if (newValue && (typeof newValue === 'object' || typeof newValue === 'function')) {
+      var then = getThen(newValue);
+
+      if (then === IS_ERROR) {
+        return reject(self, LAST_ERROR);
+      }
+
+      if (then === self.then && newValue instanceof Promise) {
+        self._65 = 3;
+        self._55 = newValue;
+        finale(self);
+        return;
+      } else if (typeof then === 'function') {
+        doResolve(then.bind(newValue), self);
+        return;
+      }
+    }
+
+    self._65 = 1;
+    self._55 = newValue;
+    finale(self);
+  }
+
+  function reject(self, newValue) {
+    self._65 = 2;
+    self._55 = newValue;
+
+    if (Promise._87) {
+      Promise._87(self, newValue);
+    }
+
+    finale(self);
+  }
+
+  function finale(self) {
+    if (self._40 === 1) {
+      handle(self, self._72);
+      self._72 = null;
+    }
+
+    if (self._40 === 2) {
+      for (var i = 0; i < self._72.length; i++) {
+        handle(self, self._72[i]);
+      }
+
+      self._72 = null;
+    }
+  }
+
+  function Handler(onFulfilled, onRejected, promise) {
+    this.onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : null;
+    this.onRejected = typeof onRejected === 'function' ? onRejected : null;
+    this.promise = promise;
+  }
+
+  function doResolve(fn, promise) {
+    var done = false;
+    var res = tryCallTwo(fn, function (value) {
+      if (done) return;
+      done = true;
+      resolve(promise, value);
+    }, function (reason) {
+      if (done) return;
+      done = true;
+      reject(promise, reason);
+    });
+
+    if (!done && res === IS_ERROR) {
+      done = true;
+      reject(promise, LAST_ERROR);
+    }
+  }
+},31,[]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var Promise = _$$_REQUIRE(_dependencyMap[0]);
+
+  module.exports = Promise;
+
+  Promise.prototype.done = function (onFulfilled, onRejected) {
+    var self = arguments.length ? this.then.apply(this, arguments) : this;
+    self.then(null, function (err) {
+      setTimeout(function () {
+        throw err;
+      }, 0);
+    });
+  };
+},32,[31]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
   var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
 
   var _createClass = _$$_REQUIRE(_dependencyMap[1]);
@@ -4010,76 +4373,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var NativeModules = _$$_REQUIRE(_dependencyMap[0]);
-
-  var Platform = _$$_REQUIRE(_dependencyMap[1]);
-
-  var defineLazyObjectProperty = _$$_REQUIRE(_dependencyMap[2]);
-
-  var invariant = _$$_REQUIRE(_dependencyMap[3]);
-
-  var UIManager = NativeModules.UIManager;
-  invariant(UIManager, 'UIManager is undefined. The native module config is probably incorrect.');
-  UIManager.__takeSnapshot = UIManager.takeSnapshot;
-
-  UIManager.takeSnapshot = function () {
-    invariant(false, "UIManager.takeSnapshot should not be called directly. Use ReactNative.takeSnapshot instead.");
-  };
-
-  if (UIManager.ViewManagerNames) {
-    var residual = global.__residual ? global.__residual : function (_, f) {
-      for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-        args[_key - 2] = arguments[_key];
-      }
-
-      return f.apply(undefined, args);
-    };
-    residual('void', function (UIManager, defineLazyObjectProperty) {
-      UIManager.ViewManagerNames.forEach(function (viewManagerName) {
-        defineLazyObjectProperty(UIManager, viewManagerName, {
-          get: function get() {
-            return UIManager.getConstantsForViewManager(viewManagerName);
-          }
-        });
-      });
-    }, UIManager, defineLazyObjectProperty);
-    if (global.__makePartial) global.__makePartial(UIManager);
-  }
-
-  module.exports = UIManager;
-},71,[8,853,27,6]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var NativeModules = _$$_REQUIRE(_dependencyMap[0]);
-
-  var Platform = {
-    OS: 'android',
-
-    get Version() {
-      var constants = NativeModules.PlatformConstants;
-      return constants && constants.Version;
-    },
-
-    get isTesting() {
-      var constants = NativeModules.PlatformConstants;
-      return constants && constants.isTesting;
-    },
-
-    get isTV() {
-      var constants = NativeModules.PlatformConstants;
-      return constants && constants.uiMode === 'tv';
-    },
-
-    select: function select(obj) {
-      return 'android' in obj ? obj.android : obj.default;
-    }
-  };
-  module.exports = Platform;
-},853,[8]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
   var _objectSpread = _$$_REQUIRE(_dependencyMap[0]);
 
   var _objectWithoutProperties = _$$_REQUIRE(_dependencyMap[1]);
@@ -4094,8 +4387,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var requireNativeComponent = _$$_REQUIRE(_dependencyMap[6]);
 
-  var RCTActivityIndicator = _$$_REQUIRE(_dependencyMap[7]);
-
+  var RCTActivityIndicator = requireNativeComponent('RCTActivityIndicatorView');
   var GRAY = '#999999';
 
   var ActivityIndicator = function ActivityIndicator(props, forwardedRef) {
@@ -4138,7 +4430,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var ActivityIndicatorWithRef = React.forwardRef(ActivityIndicator);
   ActivityIndicatorWithRef.defaultProps = {
     animating: true,
-    color: null,
+    color: GRAY,
     hidesWhenStopped: true,
     size: 'small'
   };
@@ -4157,7 +4449,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
   });
   module.exports = ActivityIndicatorWithRef;
-},47,[48,9,853,51,54,80,146,855]);
+},47,[48,9,50,51,54,80,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var defineProperty = _$$_REQUIRE(_dependencyMap[0]);
 
@@ -4200,6 +4492,44 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   module.exports = _defineProperty;
 },49,[]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var NativeModules = _$$_REQUIRE(_dependencyMap[0]);
+
+  var Platform = {
+    OS: 'ios',
+
+    get Version() {
+      var constants = NativeModules.PlatformConstants;
+      return constants && constants.osVersion;
+    },
+
+    get isPad() {
+      var constants = NativeModules.PlatformConstants;
+      return constants ? constants.interfaceIdiom === 'pad' : false;
+    },
+
+    get isTVOS() {
+      return Platform.isTV;
+    },
+
+    get isTV() {
+      var constants = NativeModules.PlatformConstants;
+      return constants ? constants.interfaceIdiom === 'tv' : false;
+    },
+
+    get isTesting() {
+      var constants = NativeModules.PlatformConstants;
+      return constants && constants.isTesting;
+    },
+
+    select: function select(obj) {
+      return 'ios' in obj ? obj.ios : obj.default;
+    }
+  };
+  module.exports = Platform;
+},50,[8]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -4823,14 +5153,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             fontScale: windowPhysicalPixels.fontScale
           };
           {
-            var screenPhysicalPixels = dims.screenPhysicalPixels;
-            dims.screen = {
-              width: screenPhysicalPixels.width / screenPhysicalPixels.scale,
-              height: screenPhysicalPixels.height / screenPhysicalPixels.scale,
-              scale: screenPhysicalPixels.scale,
-              fontScale: screenPhysicalPixels.fontScale
-            };
-            delete dims.screenPhysicalPixels;
+            dims.screen = dims.window;
           }
           delete dims.windowPhysicalPixels;
         }
@@ -4889,7 +5212,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }
 
   module.exports = Dimensions;
-},56,[3,21,22,42,853,33,6,57]);
+},56,[3,21,22,42,50,33,6,57]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -5586,6 +5909,64 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
+  var NativeModules = _$$_REQUIRE(_dependencyMap[0]);
+
+  var Platform = _$$_REQUIRE(_dependencyMap[1]);
+
+  var defineLazyObjectProperty = _$$_REQUIRE(_dependencyMap[2]);
+
+  var invariant = _$$_REQUIRE(_dependencyMap[3]);
+
+  var UIManager = NativeModules.UIManager;
+  invariant(UIManager, 'UIManager is undefined. The native module config is probably incorrect.');
+  UIManager.__takeSnapshot = UIManager.takeSnapshot;
+
+  UIManager.takeSnapshot = function () {
+    invariant(false, "UIManager.takeSnapshot should not be called directly. Use ReactNative.takeSnapshot instead.");
+  };
+
+  {
+    Object.keys(UIManager).forEach(function (viewName) {
+      var viewConfig = UIManager[viewName];
+
+      if (viewConfig.Manager) {
+        defineLazyObjectProperty(viewConfig, 'Constants', {
+          get: function get() {
+            var viewManager = NativeModules[viewConfig.Manager];
+            var constants = {};
+            viewManager && Object.keys(viewManager).forEach(function (key) {
+              var value = viewManager[key];
+
+              if (typeof value !== 'function') {
+                constants[key] = value;
+              }
+            });
+            return constants;
+          }
+        });
+        defineLazyObjectProperty(viewConfig, 'Commands', {
+          get: function get() {
+            var viewManager = NativeModules[viewConfig.Manager];
+            var commands = {};
+            var index = 0;
+            viewManager && Object.keys(viewManager).forEach(function (key) {
+              var value = viewManager[key];
+
+              if (typeof value === 'function') {
+                commands[key] = index++;
+              }
+            });
+            return commands;
+          }
+        });
+      }
+    });
+  }
+  module.exports = UIManager;
+},71,[8,50,27,6]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
   var _objectSpread = _$$_REQUIRE(_dependencyMap[0]);
 
   var ColorPropType = _$$_REQUIRE(_dependencyMap[1]);
@@ -5686,14 +6067,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
 
     int32Color = (int32Color << 24 | int32Color >>> 8) >>> 0;
-    {
-      int32Color = int32Color | 0x0;
-    }
     return int32Color;
   }
 
   module.exports = processColor;
-},74,[853,61]);
+},74,[50,61]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -5800,7 +6178,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }
 
   module.exports = processTransform;
-},75,[76,853,6,26]);
+},75,[76,50,6,26]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -11408,359 +11786,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   };
 },98,[]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var Promise = _$$_REQUIRE(_dependencyMap[0]);
-
-  module.exports = Promise;
-},28,[29]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var Promise = _$$_REQUIRE(_dependencyMap[0]);
-
-  _$$_REQUIRE(_dependencyMap[1]);
-
-  Promise.prototype['finally'] = function (onSettled) {
-    return this.then(onSettled, onSettled);
-  };
-
-  module.exports = Promise;
-},29,[30,32]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var Promise = _$$_REQUIRE(_dependencyMap[0]);
-
-  module.exports = Promise;
-  var TRUE = valuePromise(true);
-  var FALSE = valuePromise(false);
-  var NULL = valuePromise(null);
-  var UNDEFINED = valuePromise(undefined);
-  var ZERO = valuePromise(0);
-  var EMPTYSTRING = valuePromise('');
-
-  function valuePromise(value) {
-    var p = new Promise(Promise._61);
-    p._65 = 1;
-    p._55 = value;
-    return p;
-  }
-
-  Promise.resolve = function (value) {
-    if (value instanceof Promise) return value;
-    if (value === null) return NULL;
-    if (value === undefined) return UNDEFINED;
-    if (value === true) return TRUE;
-    if (value === false) return FALSE;
-    if (value === 0) return ZERO;
-    if (value === '') return EMPTYSTRING;
-
-    if (typeof value === 'object' || typeof value === 'function') {
-      try {
-        var then = value.then;
-
-        if (typeof then === 'function') {
-          return new Promise(then.bind(value));
-        }
-      } catch (ex) {
-        return new Promise(function (resolve, reject) {
-          reject(ex);
-        });
-      }
-    }
-
-    return valuePromise(value);
-  };
-
-  Promise.all = function (arr) {
-    var args = Array.prototype.slice.call(arr);
-    return new Promise(function (resolve, reject) {
-      if (args.length === 0) return resolve([]);
-      var remaining = args.length;
-
-      function res(i, val) {
-        if (val && (typeof val === 'object' || typeof val === 'function')) {
-          if (val instanceof Promise && val.then === Promise.prototype.then) {
-            while (val._65 === 3) {
-              val = val._55;
-            }
-
-            if (val._65 === 1) return res(i, val._55);
-            if (val._65 === 2) reject(val._55);
-            val.then(function (val) {
-              res(i, val);
-            }, reject);
-            return;
-          } else {
-            var then = val.then;
-
-            if (typeof then === 'function') {
-              var p = new Promise(then.bind(val));
-              p.then(function (val) {
-                res(i, val);
-              }, reject);
-              return;
-            }
-          }
-        }
-
-        args[i] = val;
-
-        if (--remaining === 0) {
-          resolve(args);
-        }
-      }
-
-      for (var i = 0; i < args.length; i++) {
-        res(i, args[i]);
-      }
-    });
-  };
-
-  Promise.reject = function (value) {
-    return new Promise(function (resolve, reject) {
-      reject(value);
-    });
-  };
-
-  Promise.race = function (values) {
-    return new Promise(function (resolve, reject) {
-      values.forEach(function (value) {
-        Promise.resolve(value).then(resolve, reject);
-      });
-    });
-  };
-
-  Promise.prototype['catch'] = function (onRejected) {
-    return this.then(null, onRejected);
-  };
-},30,[31]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  function noop() {}
-
-  var LAST_ERROR = null;
-  var IS_ERROR = {};
-
-  function getThen(obj) {
-    try {
-      return obj.then;
-    } catch (ex) {
-      LAST_ERROR = ex;
-      return IS_ERROR;
-    }
-  }
-
-  function tryCallOne(fn, a) {
-    try {
-      return fn(a);
-    } catch (ex) {
-      LAST_ERROR = ex;
-      return IS_ERROR;
-    }
-  }
-
-  function tryCallTwo(fn, a, b) {
-    try {
-      fn(a, b);
-    } catch (ex) {
-      LAST_ERROR = ex;
-      return IS_ERROR;
-    }
-  }
-
-  module.exports = Promise;
-
-  function Promise(fn) {
-    if (typeof this !== 'object') {
-      throw new TypeError('Promises must be constructed via new');
-    }
-
-    if (typeof fn !== 'function') {
-      throw new TypeError('Promise constructor\'s argument is not a function');
-    }
-
-    this._40 = 0;
-    this._65 = 0;
-    this._55 = null;
-    this._72 = null;
-    if (fn === noop) return;
-    doResolve(fn, this);
-  }
-
-  Promise._37 = null;
-  Promise._87 = null;
-  Promise._61 = noop;
-
-  Promise.prototype.then = function (onFulfilled, onRejected) {
-    if (this.constructor !== Promise) {
-      return safeThen(this, onFulfilled, onRejected);
-    }
-
-    var res = new Promise(noop);
-    handle(this, new Handler(onFulfilled, onRejected, res));
-    return res;
-  };
-
-  function safeThen(self, onFulfilled, onRejected) {
-    return new self.constructor(function (resolve, reject) {
-      var res = new Promise(noop);
-      res.then(resolve, reject);
-      handle(self, new Handler(onFulfilled, onRejected, res));
-    });
-  }
-
-  function handle(self, deferred) {
-    while (self._65 === 3) {
-      self = self._55;
-    }
-
-    if (Promise._37) {
-      Promise._37(self);
-    }
-
-    if (self._65 === 0) {
-      if (self._40 === 0) {
-        self._40 = 1;
-        self._72 = deferred;
-        return;
-      }
-
-      if (self._40 === 1) {
-        self._40 = 2;
-        self._72 = [self._72, deferred];
-        return;
-      }
-
-      self._72.push(deferred);
-
-      return;
-    }
-
-    handleResolved(self, deferred);
-  }
-
-  function handleResolved(self, deferred) {
-    setImmediate(function () {
-      var cb = self._65 === 1 ? deferred.onFulfilled : deferred.onRejected;
-
-      if (cb === null) {
-        if (self._65 === 1) {
-          resolve(deferred.promise, self._55);
-        } else {
-          reject(deferred.promise, self._55);
-        }
-
-        return;
-      }
-
-      var ret = tryCallOne(cb, self._55);
-
-      if (ret === IS_ERROR) {
-        reject(deferred.promise, LAST_ERROR);
-      } else {
-        resolve(deferred.promise, ret);
-      }
-    });
-  }
-
-  function resolve(self, newValue) {
-    if (newValue === self) {
-      return reject(self, new TypeError('A promise cannot be resolved with itself.'));
-    }
-
-    if (newValue && (typeof newValue === 'object' || typeof newValue === 'function')) {
-      var then = getThen(newValue);
-
-      if (then === IS_ERROR) {
-        return reject(self, LAST_ERROR);
-      }
-
-      if (then === self.then && newValue instanceof Promise) {
-        self._65 = 3;
-        self._55 = newValue;
-        finale(self);
-        return;
-      } else if (typeof then === 'function') {
-        doResolve(then.bind(newValue), self);
-        return;
-      }
-    }
-
-    self._65 = 1;
-    self._55 = newValue;
-    finale(self);
-  }
-
-  function reject(self, newValue) {
-    self._65 = 2;
-    self._55 = newValue;
-
-    if (Promise._87) {
-      Promise._87(self, newValue);
-    }
-
-    finale(self);
-  }
-
-  function finale(self) {
-    if (self._40 === 1) {
-      handle(self, self._72);
-      self._72 = null;
-    }
-
-    if (self._40 === 2) {
-      for (var i = 0; i < self._72.length; i++) {
-        handle(self, self._72[i]);
-      }
-
-      self._72 = null;
-    }
-  }
-
-  function Handler(onFulfilled, onRejected, promise) {
-    this.onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : null;
-    this.onRejected = typeof onRejected === 'function' ? onRejected : null;
-    this.promise = promise;
-  }
-
-  function doResolve(fn, promise) {
-    var done = false;
-    var res = tryCallTwo(fn, function (value) {
-      if (done) return;
-      done = true;
-      resolve(promise, value);
-    }, function (reason) {
-      if (done) return;
-      done = true;
-      reject(promise, reason);
-    });
-
-    if (!done && res === IS_ERROR) {
-      done = true;
-      reject(promise, LAST_ERROR);
-    }
-  }
-},31,[]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var Promise = _$$_REQUIRE(_dependencyMap[0]);
-
-  module.exports = Promise;
-
-  Promise.prototype.done = function (onFulfilled, onRejected) {
-    var self = arguments.length ? this.then.apply(this, arguments) : this;
-    self.then(null, function (err) {
-      setTimeout(function () {
-        throw err;
-      }, 0);
-    });
-  };
-},32,[31]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   !function (global) {
     "use strict";
 
@@ -12364,7 +12389,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var FRAME_DURATION = 16.666666666666668;
   var IDLE_CALLBACK_FRAME_DEADLINE = 1;
   var MAX_TIMER_DURATION_MS = 60000;
-  var IS_ANDROID = true;
+  var IS_ANDROID = false;
   var ANDROID_LONG_TIMER_MESSAGE = "Setting a timer for a long period of time, i.e. multiple minutes, is a performance and correctness issue on Android as it keeps the timer module awake, and timers can only be called when the app is in the foreground. See https://github.com/facebook/react-native/issues/12981 for more info.";
   var callbacks = [];
   var types = [];
@@ -12689,7 +12714,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   BatchedBridge.setImmediatesCallback(ExportedJSTimers.callImmediates.bind(ExportedJSTimers));
   module.exports = ExportedJSTimers;
-},100,[853,24,6,8,15,101,104]);
+},100,[50,24,6,8,15,101,104]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -13257,7 +13282,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   XMLHttpRequest.DONE = DONE;
   XMLHttpRequest._interceptor = null;
   module.exports = XMLHttpRequest;
-},105,[17,38,22,21,34,37,40,106,854,115,6,104,117]);
+},105,[17,38,22,21,34,37,40,106,110,115,6,104,117]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   "use strict";
 
@@ -13638,22 +13663,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var convertRequestBody = _$$_REQUIRE(_dependencyMap[9]);
 
-  function convertHeadersMapToArray(headers) {
-    var headerArray = [];
-
-    for (var name in headers) {
-      headerArray.push([name, headers[name]]);
-    }
-
-    return headerArray;
-  }
-
-  var _requestId = 1;
-
-  function generateRequestId() {
-    return _requestId++;
-  }
-
   var RCTNetworking = function (_NativeEventEmitter) {
     _inherits(RCTNetworking, _NativeEventEmitter);
 
@@ -13671,20 +13680,18 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       key: "sendRequest",
       value: function sendRequest(method, trackingName, url, headers, data, responseType, incrementalUpdates, timeout, callback, withCredentials) {
         var body = convertRequestBody(data);
-
-        if (body && body.formData) {
-          body.formData = body.formData.map(function (part) {
-            return _objectSpread({}, part, {
-              headers: convertHeadersMapToArray(part.headers)
-            });
-          });
-        }
-
-        var requestId = generateRequestId();
-        RCTNetworkingNative.sendRequest(method, url, requestId, convertHeadersMapToArray(headers), _objectSpread({}, body, {
-          trackingName: trackingName
-        }), responseType, incrementalUpdates, timeout, withCredentials);
-        callback(requestId);
+        RCTNetworkingNative.sendRequest({
+          method: method,
+          url: url,
+          data: _objectSpread({}, body, {
+            trackingName: trackingName
+          }),
+          headers: headers,
+          responseType: responseType,
+          incrementalUpdates: incrementalUpdates,
+          timeout: timeout,
+          withCredentials: withCredentials
+        }, callback);
       }
     }, {
       key: "abortRequest",
@@ -13705,7 +13712,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     RCTNetworking = new RCTNetworking();
   }
   module.exports = RCTNetworking;
-},854,[48,21,22,34,37,40,111,112,8,113]);
+},110,[48,21,22,34,37,40,111,112,8,113]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -13799,6 +13806,10 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       _classCallCheck(this, NativeEventEmitter);
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(NativeEventEmitter).call(this, RCTDeviceEventEmitter.sharedSubscriber));
+      {
+        invariant(nativeModule, 'Native module cannot be null.');
+        _this._nativeModule = nativeModule;
+      }
       return _this;
     }
 
@@ -13838,7 +13849,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }(EventEmitter);
 
   module.exports = NativeEventEmitter;
-},112,[21,22,34,37,38,40,42,853,33,6]);
+},112,[21,22,34,37,38,40,42,50,33,6]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -14961,9 +14972,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       key: "_close",
       value: function _close(code, reason) {
         {
-          var statusCode = typeof code === 'number' ? code : CLOSE_NORMAL;
-          var closeReason = typeof reason === 'string' ? reason : '';
-          WebSocketModule.close(statusCode, closeReason, this._socketId);
+          WebSocketModule.close(this._socketId);
         }
 
         if (BlobManager.isAvailable && this._binaryType === 'blob') {
@@ -15080,7 +15089,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   WebSocket.CLOSED = CLOSED;
   WebSocket.isAvailable = !!WebSocketModule;
   module.exports = WebSocket;
-},122,[9,21,22,34,37,40,116,106,112,117,8,853,123,115,114,6]);
+},122,[9,21,22,34,37,40,116,106,112,117,8,50,123,115,114,6]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -15400,7 +15409,13 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       key: "alert",
       value: function alert(title, message, buttons, options, type) {
         {
-          AlertAndroid.alert(title, message, buttons, options);
+          if (typeof type !== 'undefined') {
+            console.warn('Alert.alert() with a 5th "type" parameter is deprecated and will be removed. Use AlertIOS.prompt() instead.');
+            AlertIOS.alert(title, message, buttons, type);
+            return;
+          }
+
+          AlertIOS.alert(title, message, buttons);
         }
       }
     }]);
@@ -15474,7 +15489,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }();
 
   module.exports = Alert;
-},127,[48,21,22,128,8,853]);
+},127,[48,21,22,128,8,50]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -15606,12 +15621,10 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             case 0:
               invariant(typeof geo_success === 'function', 'Must provide a valid geo_success callback.');
               hasPermission = true;
-
-              if (!(Platform.Version >= 23)) {
+              {
                 _context.next = 11;
                 break;
               }
-
               _context.next = 5;
               return _regeneratorRuntime.awrap(PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION));
 
@@ -15696,7 +15709,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
   };
   module.exports = Geolocation;
-},129,[130,112,8,6,133,104,853,134]);
+},129,[130,112,8,6,133,104,50,134]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   module.exports = _$$_REQUIRE(_dependencyMap[0]);
 },130,[131]);
@@ -16858,7 +16871,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     if (currentlyFocusedID !== textFieldID && textFieldID !== null) {
       currentlyFocusedID = textFieldID;
       {
-        UIManager.dispatchViewManagerCommand(textFieldID, UIManager.AndroidTextInput.Commands.focusTextInput, null);
+        UIManager.focus(textFieldID);
       }
     }
   }
@@ -16867,7 +16880,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     if (currentlyFocusedID === textFieldID && textFieldID !== null) {
       currentlyFocusedID = null;
       {
-        UIManager.dispatchViewManagerCommand(textFieldID, UIManager.AndroidTextInput.Commands.blurTextInput, null);
+        UIManager.blur(textFieldID);
       }
     }
   }
@@ -16892,7 +16905,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     unregisterInput: unregisterInput,
     isTextInput: isTextInput
   };
-},145,[853,71]);
+},145,[50,71]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -17304,14 +17317,14 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
 
         {
-          return this.isLoadedFromFileSystem() ? this.drawableFolderInBundle() : this.resourceIdentifierWithoutScale();
+          return this.scaledAssetURLNearBundle();
         }
       }
     }, {
       key: "assetServerURL",
       value: function assetServerURL() {
         invariant(!!this.serverUrl, 'need server to load from');
-        return this.fromSource(this.serverUrl + getScaledAssetPath(this.asset) + '?platform=' + "android" + '&hash=' + this.asset.hash);
+        return this.fromSource(this.serverUrl + getScaledAssetPath(this.asset) + '?platform=' + "ios" + '&hash=' + this.asset.hash);
       }
     }, {
       key: "scaledAssetPath",
@@ -17327,7 +17340,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }, {
       key: "resourceIdentifierWithoutScale",
       value: function resourceIdentifierWithoutScale() {
-        invariant(true, 'resource identifiers work on Android');
+        invariant(false, 'resource identifiers work on Android');
         return this.fromSource(assetPathUtils.getAndroidResourceIdentifier(this.asset));
       }
     }, {
@@ -17364,7 +17377,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }();
 
   module.exports = AssetSourceResolver;
-},154,[21,22,55,853,155,6]);
+},154,[21,22,55,50,155,6]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -17431,31 +17444,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     getBasePath: getBasePath
   };
 },155,[]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var _extends = _$$_REQUIRE(_dependencyMap[0]);
-
-  var React = _$$_REQUIRE(_dependencyMap[1]);
-
-  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[2]);
-
-  var AndroidProgressBar = requireNativeComponent('AndroidProgressBar');
-
-  var ProgressBarAndroid = function ProgressBarAndroid(props, forwardedRef) {
-    return React.createElement(AndroidProgressBar, _extends({}, props, {
-      ref: forwardedRef
-    }));
-  };
-
-  var ProgressBarAndroidToExport = React.forwardRef(ProgressBarAndroid);
-  ProgressBarAndroidToExport.defaultProps = {
-    styleAttr: 'Normal',
-    indeterminate: true,
-    animating: true
-  };
-  module.exports = ProgressBarAndroidToExport;
-},855,[3,51,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -19076,8 +19064,8 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
         if (color) {
           {
-            buttonStyles.push({
-              backgroundColor: color
+            textStyles.push({
+              color: color
             });
           }
         }
@@ -19091,8 +19079,8 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
 
         invariant(typeof title === 'string', 'The title prop of a Button must be a string');
-        var formattedTitle = title.toUpperCase();
-        var Touchable = TouchableNativeFeedback;
+        var formattedTitle = title;
+        var Touchable = TouchableOpacity;
         return React.createElement(Touchable, {
           accessibilityLabel: accessibilityLabel,
           accessibilityRole: "button",
@@ -19123,27 +19111,20 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     testID: PropTypes.string
   };
   var styles = StyleSheet.create({
-    button: {
-      elevation: 4,
-      backgroundColor: '#2196F3',
-      borderRadius: 2
-    },
+    button: {},
     text: {
-      color: 'white',
+      color: '#007AFF',
       textAlign: 'center',
       padding: 8,
-      fontWeight: '500'
+      fontSize: 18
     },
-    buttonDisabled: {
-      elevation: 0,
-      backgroundColor: '#dfdfdf'
-    },
+    buttonDisabled: {},
     textDisabled: {
-      color: '#a1a1a1'
+      color: '#cdcdcd'
     }
   });
   module.exports = Button;
-},166,[21,22,34,37,40,60,853,51,65,54,167,856,180,80,6]);
+},166,[21,22,34,37,40,60,50,51,65,54,167,179,180,80,6]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -19939,9 +19920,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             this._endHighlight(e);
           }
 
-          {
-            this._playTouchSound();
-          }
           this.touchableHandlePress(e);
         }
       }
@@ -20011,7 +19989,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
   };
   module.exports = Touchable;
-},172,[48,173,853,175,51,83,176,177,71,80,63,61]);
+},172,[48,173,50,175,51,83,176,177,71,80,63,61]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -20163,6 +20141,10 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }
 
   TVEventHandler.prototype.enable = function (component, callback) {
+    if (!TVNavigationEventEmitter) {
+      return;
+    }
+
     this.__nativeTVNavigationEventEmitter = new NativeEventEmitter(TVNavigationEventEmitter);
     this.__nativeTVNavigationEventListener = this.__nativeTVNavigationEventEmitter.addListener('onHWKeyEvent', function (data) {
       if (callback) {
@@ -20184,7 +20166,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   };
 
   module.exports = TVEventHandler;
-},176,[853,8,112]);
+},176,[50,8,112]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   "use strict";
 
@@ -20215,743 +20197,81 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var _defineProperty = _$$_REQUIRE(_dependencyMap[0]);
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
 
-  var _objectSpread = _$$_REQUIRE(_dependencyMap[1]);
+  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
 
-  var Platform = _$$_REQUIRE(_dependencyMap[2]);
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
 
-  var React = _$$_REQUIRE(_dependencyMap[3]);
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
 
-  var PropTypes = _$$_REQUIRE(_dependencyMap[4]);
+  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
 
-  var ReactNative = _$$_REQUIRE(_dependencyMap[5]);
+  var React = _$$_REQUIRE(_dependencyMap[5]);
 
-  var Touchable = _$$_REQUIRE(_dependencyMap[6]);
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[6]);
 
-  var TouchableWithoutFeedback = _$$_REQUIRE(_dependencyMap[7]);
+  var Text = _$$_REQUIRE(_dependencyMap[7]);
 
-  var UIManager = _$$_REQUIRE(_dependencyMap[8]);
+  var View = _$$_REQUIRE(_dependencyMap[8]);
 
-  var View = _$$_REQUIRE(_dependencyMap[9]);
+  var DummyTouchableNativeFeedback = function (_React$Component) {
+    _inherits(DummyTouchableNativeFeedback, _React$Component);
 
-  var createReactClass = _$$_REQUIRE(_dependencyMap[10]);
+    function DummyTouchableNativeFeedback() {
+      _classCallCheck(this, DummyTouchableNativeFeedback);
 
-  var ensurePositiveDelayProps = _$$_REQUIRE(_dependencyMap[11]);
+      return _possibleConstructorReturn(this, _getPrototypeOf(DummyTouchableNativeFeedback).apply(this, arguments));
+    }
 
-  var processColor = _$$_REQUIRE(_dependencyMap[12]);
+    _createClass(DummyTouchableNativeFeedback, [{
+      key: "render",
+      value: function render() {
+        return React.createElement(View, {
+          style: [styles.container, this.props.style]
+        }, React.createElement(Text, {
+          style: styles.info
+        }, "TouchableNativeFeedback is not supported on this platform!"));
+      }
+    }]);
 
-  var rippleBackgroundPropType = PropTypes.shape({
-    type: PropTypes.oneOf(['RippleAndroid']),
-    color: PropTypes.number,
-    borderless: PropTypes.bool
-  });
-  var themeAttributeBackgroundPropType = PropTypes.shape({
-    type: PropTypes.oneOf(['ThemeAttrAndroid']),
-    attribute: PropTypes.string.isRequired
-  });
-  var backgroundPropType = PropTypes.oneOfType([rippleBackgroundPropType, themeAttributeBackgroundPropType]);
-  var PRESS_RETENTION_OFFSET = {
-    top: 20,
-    left: 20,
-    right: 20,
-    bottom: 30
+    return DummyTouchableNativeFeedback;
+  }(React.Component);
+
+  DummyTouchableNativeFeedback.SelectableBackground = function () {
+    return {};
   };
-  var TouchableNativeFeedback = createReactClass({
-    displayName: 'TouchableNativeFeedback',
-    propTypes: _objectSpread({}, TouchableWithoutFeedback.propTypes, {
-      background: backgroundPropType,
-      hasTVPreferredFocus: PropTypes.bool,
-      useForeground: PropTypes.bool
-    }),
-    statics: {
-      SelectableBackground: function SelectableBackground() {
-        return {
-          type: 'ThemeAttrAndroid',
-          attribute: 'selectableItemBackground'
-        };
-      },
-      SelectableBackgroundBorderless: function SelectableBackgroundBorderless() {
-        return {
-          type: 'ThemeAttrAndroid',
-          attribute: 'selectableItemBackgroundBorderless'
-        };
-      },
-      Ripple: function Ripple(color, borderless) {
-        return {
-          type: 'RippleAndroid',
-          color: processColor(color),
-          borderless: borderless
-        };
-      },
-      canUseNativeForeground: function canUseNativeForeground() {
-        return Platform.Version >= 23;
-      }
-    },
-    mixins: [Touchable.Mixin],
-    getDefaultProps: function getDefaultProps() {
-      return {
-        background: this.SelectableBackground()
-      };
-    },
-    getInitialState: function getInitialState() {
-      return this.touchableGetInitialState();
-    },
-    componentDidMount: function componentDidMount() {
-      ensurePositiveDelayProps(this.props);
-    },
-    UNSAFE_componentWillReceiveProps: function UNSAFE_componentWillReceiveProps(nextProps) {
-      ensurePositiveDelayProps(nextProps);
-    },
-    touchableHandleActivePressIn: function touchableHandleActivePressIn(e) {
-      this.props.onPressIn && this.props.onPressIn(e);
 
-      this._dispatchPressedStateChange(true);
+  DummyTouchableNativeFeedback.SelectableBackgroundBorderless = function () {
+    return {};
+  };
 
-      if (this.pressInLocation) {
-        this._dispatchHotspotUpdate(this.pressInLocation.locationX, this.pressInLocation.locationY);
-      }
-    },
-    touchableHandleActivePressOut: function touchableHandleActivePressOut(e) {
-      this.props.onPressOut && this.props.onPressOut(e);
+  DummyTouchableNativeFeedback.Ripple = function () {
+    return {};
+  };
 
-      this._dispatchPressedStateChange(false);
-    },
-    touchableHandlePress: function touchableHandlePress(e) {
-      this.props.onPress && this.props.onPress(e);
-    },
-    touchableHandleLongPress: function touchableHandleLongPress(e) {
-      this.props.onLongPress && this.props.onLongPress(e);
-    },
-    touchableGetPressRectOffset: function touchableGetPressRectOffset() {
-      return this.props.pressRetentionOffset || PRESS_RETENTION_OFFSET;
-    },
-    touchableGetHitSlop: function touchableGetHitSlop() {
-      return this.props.hitSlop;
-    },
-    touchableGetHighlightDelayMS: function touchableGetHighlightDelayMS() {
-      return this.props.delayPressIn;
-    },
-    touchableGetLongPressDelayMS: function touchableGetLongPressDelayMS() {
-      return this.props.delayLongPress;
-    },
-    touchableGetPressOutDelayMS: function touchableGetPressOutDelayMS() {
-      return this.props.delayPressOut;
-    },
-    _handleResponderMove: function _handleResponderMove(e) {
-      this.touchableHandleResponderMove(e);
+  DummyTouchableNativeFeedback.canUseNativeForeground = function () {
+    return false;
+  };
 
-      this._dispatchHotspotUpdate(e.nativeEvent.locationX, e.nativeEvent.locationY);
+  var styles = StyleSheet.create({
+    container: {
+      height: 100,
+      width: 300,
+      backgroundColor: '#ffbcbc',
+      borderWidth: 1,
+      borderColor: 'red',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: 10
     },
-    _dispatchHotspotUpdate: function _dispatchHotspotUpdate(destX, destY) {
-      UIManager.dispatchViewManagerCommand(ReactNative.findNodeHandle(this), UIManager.RCTView.Commands.hotspotUpdate, [destX || 0, destY || 0]);
-    },
-    _dispatchPressedStateChange: function _dispatchPressedStateChange(pressed) {
-      UIManager.dispatchViewManagerCommand(ReactNative.findNodeHandle(this), UIManager.RCTView.Commands.setPressed, [pressed]);
-    },
-    render: function render() {
-      var _objectSpread2;
-
-      var child = React.Children.only(this.props.children);
-      var children = child.props.children;
-
-      if (Touchable.TOUCH_TARGET_DEBUG && child.type === View) {
-        if (!Array.isArray(children)) {
-          children = [children];
-        }
-
-        children.push(Touchable.renderDebugView({
-          color: 'brown',
-          hitSlop: this.props.hitSlop
-        }));
-      }
-
-      if (this.props.useForeground && !TouchableNativeFeedback.canUseNativeForeground()) {
-        console.warn("Requested foreground ripple, but it is not available on this version of Android. Consider calling TouchableNativeFeedback.canUseNativeForeground() and using a different Touchable if the result is false.");
-      }
-
-      var drawableProp = this.props.useForeground && TouchableNativeFeedback.canUseNativeForeground() ? 'nativeForegroundAndroid' : 'nativeBackgroundAndroid';
-
-      var childProps = _objectSpread({}, child.props, (_objectSpread2 = {}, _defineProperty(_objectSpread2, drawableProp, this.props.background), _defineProperty(_objectSpread2, "accessible", this.props.accessible !== false), _defineProperty(_objectSpread2, "accessibilityLabel", this.props.accessibilityLabel), _defineProperty(_objectSpread2, "accessibilityRole", this.props.accessibilityRole), _defineProperty(_objectSpread2, "accessibilityStates", this.props.accessibilityStates), _defineProperty(_objectSpread2, "children", children), _defineProperty(_objectSpread2, "testID", this.props.testID), _defineProperty(_objectSpread2, "onLayout", this.props.onLayout), _defineProperty(_objectSpread2, "hitSlop", this.props.hitSlop), _defineProperty(_objectSpread2, "isTVSelectable", true), _defineProperty(_objectSpread2, "hasTVPreferredFocus", this.props.hasTVPreferredFocus), _defineProperty(_objectSpread2, "onStartShouldSetResponder", this.touchableHandleStartShouldSetResponder), _defineProperty(_objectSpread2, "onResponderTerminationRequest", this.touchableHandleResponderTerminationRequest), _defineProperty(_objectSpread2, "onResponderGrant", this.touchableHandleResponderGrant), _defineProperty(_objectSpread2, "onResponderMove", this._handleResponderMove), _defineProperty(_objectSpread2, "onResponderRelease", this.touchableHandleResponderRelease), _defineProperty(_objectSpread2, "onResponderTerminate", this.touchableHandleResponderTerminate), _objectSpread2));
-
-      return React.cloneElement(child, childProps);
+    info: {
+      color: '#333333',
+      margin: 20
     }
   });
-  module.exports = TouchableNativeFeedback;
-},856,[49,48,853,51,65,83,172,244,71,80,225,245,74]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var EdgeInsetsPropType = _$$_REQUIRE(_dependencyMap[0]);
-
-  var React = _$$_REQUIRE(_dependencyMap[1]);
-
-  var PropTypes = _$$_REQUIRE(_dependencyMap[2]);
-
-  var TimerMixin = _$$_REQUIRE(_dependencyMap[3]);
-
-  var Touchable = _$$_REQUIRE(_dependencyMap[4]);
-
-  var View = _$$_REQUIRE(_dependencyMap[5]);
-
-  var createReactClass = _$$_REQUIRE(_dependencyMap[6]);
-
-  var ensurePositiveDelayProps = _$$_REQUIRE(_dependencyMap[7]);
-
-  var warning = _$$_REQUIRE(_dependencyMap[8]);
-
-  var _require = _$$_REQUIRE(_dependencyMap[9]),
-      AccessibilityComponentTypes = _require.AccessibilityComponentTypes,
-      AccessibilityRoles = _require.AccessibilityRoles,
-      AccessibilityStates = _require.AccessibilityStates,
-      AccessibilityTraits = _require.AccessibilityTraits;
-
-  var PRESS_RETENTION_OFFSET = {
-    top: 20,
-    left: 20,
-    right: 20,
-    bottom: 30
-  };
-  var TouchableWithoutFeedback = createReactClass({
-    displayName: 'TouchableWithoutFeedback',
-    mixins: [TimerMixin, Touchable.Mixin],
-    propTypes: {
-      accessible: PropTypes.bool,
-      accessibilityLabel: PropTypes.node,
-      accessibilityHint: PropTypes.string,
-      accessibilityComponentType: PropTypes.oneOf(AccessibilityComponentTypes),
-      accessibilityRole: PropTypes.oneOf(AccessibilityRoles),
-      accessibilityStates: PropTypes.arrayOf(PropTypes.oneOf(AccessibilityStates)),
-      accessibilityTraits: PropTypes.oneOfType([PropTypes.oneOf(AccessibilityTraits), PropTypes.arrayOf(PropTypes.oneOf(AccessibilityTraits))]),
-      onFocus: PropTypes.func,
-      onBlur: PropTypes.func,
-      disabled: PropTypes.bool,
-      onPress: PropTypes.func,
-      onPressIn: PropTypes.func,
-      onPressOut: PropTypes.func,
-      onLayout: PropTypes.func,
-      onLongPress: PropTypes.func,
-      nativeID: PropTypes.string,
-      testID: PropTypes.string,
-      delayPressIn: PropTypes.number,
-      delayPressOut: PropTypes.number,
-      delayLongPress: PropTypes.number,
-      pressRetentionOffset: EdgeInsetsPropType,
-      hitSlop: EdgeInsetsPropType
-    },
-    getInitialState: function getInitialState() {
-      return this.touchableGetInitialState();
-    },
-    componentDidMount: function componentDidMount() {
-      ensurePositiveDelayProps(this.props);
-    },
-    UNSAFE_componentWillReceiveProps: function UNSAFE_componentWillReceiveProps(nextProps) {
-      ensurePositiveDelayProps(nextProps);
-    },
-    touchableHandlePress: function touchableHandlePress(e) {
-      this.props.onPress && this.props.onPress(e);
-    },
-    touchableHandleActivePressIn: function touchableHandleActivePressIn(e) {
-      this.props.onPressIn && this.props.onPressIn(e);
-    },
-    touchableHandleActivePressOut: function touchableHandleActivePressOut(e) {
-      this.props.onPressOut && this.props.onPressOut(e);
-    },
-    touchableHandleLongPress: function touchableHandleLongPress(e) {
-      this.props.onLongPress && this.props.onLongPress(e);
-    },
-    touchableGetPressRectOffset: function touchableGetPressRectOffset() {
-      return this.props.pressRetentionOffset || PRESS_RETENTION_OFFSET;
-    },
-    touchableGetHitSlop: function touchableGetHitSlop() {
-      return this.props.hitSlop;
-    },
-    touchableGetHighlightDelayMS: function touchableGetHighlightDelayMS() {
-      return this.props.delayPressIn || 0;
-    },
-    touchableGetLongPressDelayMS: function touchableGetLongPressDelayMS() {
-      return this.props.delayLongPress === 0 ? 0 : this.props.delayLongPress || 500;
-    },
-    touchableGetPressOutDelayMS: function touchableGetPressOutDelayMS() {
-      return this.props.delayPressOut || 0;
-    },
-    render: function render() {
-      var child = React.Children.only(this.props.children);
-      var children = child.props.children;
-
-      if (Touchable.TOUCH_TARGET_DEBUG && child.type === View) {
-        children = React.Children.toArray(children);
-        children.push(Touchable.renderDebugView({
-          color: 'red',
-          hitSlop: this.props.hitSlop
-        }));
-      }
-
-      return React.cloneElement(child, {
-        accessible: this.props.accessible !== false,
-        accessibilityLabel: this.props.accessibilityLabel,
-        accessibilityHint: this.props.accessibilityHint,
-        accessibilityComponentType: this.props.accessibilityComponentType,
-        accessibilityRole: this.props.accessibilityRole,
-        accessibilityStates: this.props.accessibilityStates,
-        accessibilityTraits: this.props.accessibilityTraits,
-        nativeID: this.props.nativeID,
-        testID: this.props.testID,
-        onLayout: this.props.onLayout,
-        hitSlop: this.props.hitSlop,
-        onStartShouldSetResponder: this.touchableHandleStartShouldSetResponder,
-        onResponderTerminationRequest: this.touchableHandleResponderTerminationRequest,
-        onResponderGrant: this.touchableHandleResponderGrant,
-        onResponderMove: this.touchableHandleResponderMove,
-        onResponderRelease: this.touchableHandleResponderRelease,
-        onResponderTerminate: this.touchableHandleResponderTerminate,
-        children: children
-      });
-    }
-  });
-  module.exports = TouchableWithoutFeedback;
-},244,[169,51,65,230,172,80,225,245,104,246]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var GLOBAL = typeof window === 'undefined' ? global : window;
-
-  var setter = function setter(_setter, _clearer, array) {
-    return function (callback, delta) {
-      var id = _setter(function () {
-        _clearer.call(this, id);
-
-        callback.apply(this, arguments);
-      }.bind(this), delta);
-
-      if (!this[array]) {
-        this[array] = [id];
-      } else {
-        this[array].push(id);
-      }
-
-      return id;
-    };
-  };
-
-  var clearer = function clearer(_clearer, array) {
-    return function (id) {
-      if (this[array]) {
-        var index = this[array].indexOf(id);
-
-        if (index !== -1) {
-          this[array].splice(index, 1);
-        }
-      }
-
-      _clearer(id);
-    };
-  };
-
-  var _timeouts = 'TimerMixin_timeouts';
-
-  var _clearTimeout = clearer(GLOBAL.clearTimeout, _timeouts);
-
-  var _setTimeout = setter(GLOBAL.setTimeout, _clearTimeout, _timeouts);
-
-  var _intervals = 'TimerMixin_intervals';
-
-  var _clearInterval = clearer(GLOBAL.clearInterval, _intervals);
-
-  var _setInterval = setter(GLOBAL.setInterval, function () {}, _intervals);
-
-  var _immediates = 'TimerMixin_immediates';
-
-  var _clearImmediate = clearer(GLOBAL.clearImmediate, _immediates);
-
-  var _setImmediate = setter(GLOBAL.setImmediate, _clearImmediate, _immediates);
-
-  var _rafs = 'TimerMixin_rafs';
-
-  var _cancelAnimationFrame = clearer(GLOBAL.cancelAnimationFrame, _rafs);
-
-  var _requestAnimationFrame = setter(GLOBAL.requestAnimationFrame, _cancelAnimationFrame, _rafs);
-
-  var TimerMixin = {
-    componentWillUnmount: function componentWillUnmount() {
-      this[_timeouts] && this[_timeouts].forEach(function (id) {
-        GLOBAL.clearTimeout(id);
-      });
-      this[_timeouts] = null;
-      this[_intervals] && this[_intervals].forEach(function (id) {
-        GLOBAL.clearInterval(id);
-      });
-      this[_intervals] = null;
-      this[_immediates] && this[_immediates].forEach(function (id) {
-        GLOBAL.clearImmediate(id);
-      });
-      this[_immediates] = null;
-      this[_rafs] && this[_rafs].forEach(function (id) {
-        GLOBAL.cancelAnimationFrame(id);
-      });
-      this[_rafs] = null;
-    },
-    setTimeout: _setTimeout,
-    clearTimeout: _clearTimeout,
-    setInterval: _setInterval,
-    clearInterval: _clearInterval,
-    setImmediate: _setImmediate,
-    clearImmediate: _clearImmediate,
-    requestAnimationFrame: _requestAnimationFrame,
-    cancelAnimationFrame: _cancelAnimationFrame
-  };
-  module.exports = TimerMixin;
-},230,[]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var React = _$$_REQUIRE(_dependencyMap[0]);
-
-  var factory = _$$_REQUIRE(_dependencyMap[1]);
-
-  if (typeof React === 'undefined') {
-    throw Error("create-react-class could not find the React object. If you are using script tags, make sure that React is being loaded before create-react-class.");
-  }
-
-  var ReactNoopUpdateQueue = new React.Component().updater;
-  module.exports = factory(React.Component, React.isValidElement, ReactNoopUpdateQueue);
-},225,[51,226]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var _assign = _$$_REQUIRE(_dependencyMap[0]);
-
-  var emptyObject = _$$_REQUIRE(_dependencyMap[1]);
-
-  var _invariant = _$$_REQUIRE(_dependencyMap[2]);
-
-  var MIXINS_KEY = 'mixins';
-
-  function identity(fn) {
-    return fn;
-  }
-
-  var ReactPropTypeLocationNames;
-  {
-    ReactPropTypeLocationNames = {};
-  }
-
-  function factory(ReactComponent, isValidElement, ReactNoopUpdateQueue) {
-    var injectedMixins = [];
-    var ReactClassInterface = {
-      mixins: 'DEFINE_MANY',
-      statics: 'DEFINE_MANY',
-      propTypes: 'DEFINE_MANY',
-      contextTypes: 'DEFINE_MANY',
-      childContextTypes: 'DEFINE_MANY',
-      getDefaultProps: 'DEFINE_MANY_MERGED',
-      getInitialState: 'DEFINE_MANY_MERGED',
-      getChildContext: 'DEFINE_MANY_MERGED',
-      render: 'DEFINE_ONCE',
-      componentWillMount: 'DEFINE_MANY',
-      componentDidMount: 'DEFINE_MANY',
-      componentWillReceiveProps: 'DEFINE_MANY',
-      shouldComponentUpdate: 'DEFINE_ONCE',
-      componentWillUpdate: 'DEFINE_MANY',
-      componentDidUpdate: 'DEFINE_MANY',
-      componentWillUnmount: 'DEFINE_MANY',
-      UNSAFE_componentWillMount: 'DEFINE_MANY',
-      UNSAFE_componentWillReceiveProps: 'DEFINE_MANY',
-      UNSAFE_componentWillUpdate: 'DEFINE_MANY',
-      updateComponent: 'OVERRIDE_BASE'
-    };
-    var ReactClassStaticInterface = {
-      getDerivedStateFromProps: 'DEFINE_MANY_MERGED'
-    };
-    var RESERVED_SPEC_KEYS = {
-      displayName: function displayName(Constructor, _displayName) {
-        Constructor.displayName = _displayName;
-      },
-      mixins: function mixins(Constructor, _mixins) {
-        if (_mixins) {
-          for (var i = 0; i < _mixins.length; i++) {
-            mixSpecIntoComponent(Constructor, _mixins[i]);
-          }
-        }
-      },
-      childContextTypes: function childContextTypes(Constructor, _childContextTypes) {
-        Constructor.childContextTypes = _assign({}, Constructor.childContextTypes, _childContextTypes);
-      },
-      contextTypes: function contextTypes(Constructor, _contextTypes) {
-        Constructor.contextTypes = _assign({}, Constructor.contextTypes, _contextTypes);
-      },
-      getDefaultProps: function getDefaultProps(Constructor, _getDefaultProps) {
-        if (Constructor.getDefaultProps) {
-          Constructor.getDefaultProps = createMergedResultFunction(Constructor.getDefaultProps, _getDefaultProps);
-        } else {
-          Constructor.getDefaultProps = _getDefaultProps;
-        }
-      },
-      propTypes: function propTypes(Constructor, _propTypes) {
-        Constructor.propTypes = _assign({}, Constructor.propTypes, _propTypes);
-      },
-      statics: function statics(Constructor, _statics) {
-        mixStaticSpecIntoComponent(Constructor, _statics);
-      },
-      autobind: function autobind() {}
-    };
-
-    function validateTypeDef(Constructor, typeDef, location) {
-      for (var propName in typeDef) {
-        if (typeDef.hasOwnProperty(propName)) {}
-      }
-    }
-
-    function validateMethodOverride(isAlreadyDefined, name) {
-      var specPolicy = ReactClassInterface.hasOwnProperty(name) ? ReactClassInterface[name] : null;
-
-      if (ReactClassMixin.hasOwnProperty(name)) {
-        _invariant(specPolicy === 'OVERRIDE_BASE', "ReactClassInterface: You are attempting to override `%s` from your class specification. Ensure that your method names do not overlap with React methods.", name);
-      }
-
-      if (isAlreadyDefined) {
-        _invariant(specPolicy === 'DEFINE_MANY' || specPolicy === 'DEFINE_MANY_MERGED', "ReactClassInterface: You are attempting to define `%s` on your component more than once. This conflict may be due to a mixin.", name);
-      }
-    }
-
-    function mixSpecIntoComponent(Constructor, spec) {
-      if (!spec) {
-        return;
-      }
-
-      _invariant(typeof spec !== 'function', "ReactClass: You're attempting to use a component class or function as a mixin. Instead, just use a regular object.");
-
-      _invariant(!isValidElement(spec), "ReactClass: You're attempting to use a component as a mixin. Instead, just use a regular object.");
-
-      var proto = Constructor.prototype;
-      var autoBindPairs = proto.__reactAutoBindPairs;
-
-      if (spec.hasOwnProperty(MIXINS_KEY)) {
-        RESERVED_SPEC_KEYS.mixins(Constructor, spec.mixins);
-      }
-
-      for (var name in spec) {
-        if (!spec.hasOwnProperty(name)) {
-          continue;
-        }
-
-        if (name === MIXINS_KEY) {
-          continue;
-        }
-
-        var property = spec[name];
-        var isAlreadyDefined = proto.hasOwnProperty(name);
-        validateMethodOverride(isAlreadyDefined, name);
-
-        if (RESERVED_SPEC_KEYS.hasOwnProperty(name)) {
-          RESERVED_SPEC_KEYS[name](Constructor, property);
-        } else {
-          var isReactClassMethod = ReactClassInterface.hasOwnProperty(name);
-          var isFunction = typeof property === 'function';
-          var shouldAutoBind = isFunction && !isReactClassMethod && !isAlreadyDefined && spec.autobind !== false;
-
-          if (shouldAutoBind) {
-            autoBindPairs.push(name, property);
-            proto[name] = property;
-          } else {
-            if (isAlreadyDefined) {
-              var specPolicy = ReactClassInterface[name];
-
-              _invariant(isReactClassMethod && (specPolicy === 'DEFINE_MANY_MERGED' || specPolicy === 'DEFINE_MANY'), "ReactClass: Unexpected spec policy %s for key %s when mixing in component specs.", specPolicy, name);
-
-              if (specPolicy === 'DEFINE_MANY_MERGED') {
-                proto[name] = createMergedResultFunction(proto[name], property);
-              } else if (specPolicy === 'DEFINE_MANY') {
-                proto[name] = createChainedFunction(proto[name], property);
-              }
-            } else {
-              proto[name] = property;
-            }
-          }
-        }
-      }
-    }
-
-    function mixStaticSpecIntoComponent(Constructor, statics) {
-      if (!statics) {
-        return;
-      }
-
-      for (var name in statics) {
-        var property = statics[name];
-
-        if (!statics.hasOwnProperty(name)) {
-          continue;
-        }
-
-        var isReserved = name in RESERVED_SPEC_KEYS;
-
-        _invariant(!isReserved, "ReactClass: You are attempting to define a reserved property, `%s`, that shouldn't be on the \"statics\" key. Define it as an instance property instead; it will still be accessible on the constructor.", name);
-
-        var isAlreadyDefined = name in Constructor;
-
-        if (isAlreadyDefined) {
-          var specPolicy = ReactClassStaticInterface.hasOwnProperty(name) ? ReactClassStaticInterface[name] : null;
-
-          _invariant(specPolicy === 'DEFINE_MANY_MERGED', "ReactClass: You are attempting to define `%s` on your component more than once. This conflict may be due to a mixin.", name);
-
-          Constructor[name] = createMergedResultFunction(Constructor[name], property);
-          return;
-        }
-
-        Constructor[name] = property;
-      }
-    }
-
-    function mergeIntoWithNoDuplicateKeys(one, two) {
-      _invariant(one && two && typeof one === 'object' && typeof two === 'object', 'mergeIntoWithNoDuplicateKeys(): Cannot merge non-objects.');
-
-      for (var key in two) {
-        if (two.hasOwnProperty(key)) {
-          _invariant(one[key] === undefined, "mergeIntoWithNoDuplicateKeys(): Tried to merge two objects with the same key: `%s`. This conflict may be due to a mixin; in particular, this may be caused by two getInitialState() or getDefaultProps() methods returning objects with clashing keys.", key);
-
-          one[key] = two[key];
-        }
-      }
-
-      return one;
-    }
-
-    function createMergedResultFunction(one, two) {
-      return function mergedResult() {
-        var a = one.apply(this, arguments);
-        var b = two.apply(this, arguments);
-
-        if (a == null) {
-          return b;
-        } else if (b == null) {
-          return a;
-        }
-
-        var c = {};
-        mergeIntoWithNoDuplicateKeys(c, a);
-        mergeIntoWithNoDuplicateKeys(c, b);
-        return c;
-      };
-    }
-
-    function createChainedFunction(one, two) {
-      return function chainedFunction() {
-        one.apply(this, arguments);
-        two.apply(this, arguments);
-      };
-    }
-
-    function bindAutoBindMethod(component, method) {
-      var boundMethod = method.bind(component);
-      return boundMethod;
-    }
-
-    function bindAutoBindMethods(component) {
-      var pairs = component.__reactAutoBindPairs;
-
-      for (var i = 0; i < pairs.length; i += 2) {
-        var autoBindKey = pairs[i];
-        var method = pairs[i + 1];
-        component[autoBindKey] = bindAutoBindMethod(component, method);
-      }
-    }
-
-    var IsMountedPreMixin = {
-      componentDidMount: function componentDidMount() {
-        this.__isMounted = true;
-      }
-    };
-    var IsMountedPostMixin = {
-      componentWillUnmount: function componentWillUnmount() {
-        this.__isMounted = false;
-      }
-    };
-    var ReactClassMixin = {
-      replaceState: function replaceState(newState, callback) {
-        this.updater.enqueueReplaceState(this, newState, callback);
-      },
-      isMounted: function isMounted() {
-        return !!this.__isMounted;
-      }
-    };
-
-    var ReactClassComponent = function ReactClassComponent() {};
-
-    _assign(ReactClassComponent.prototype, ReactComponent.prototype, ReactClassMixin);
-
-    function createClass(spec) {
-      var Constructor = identity(function (props, context, updater) {
-        if (this.__reactAutoBindPairs.length) {
-          bindAutoBindMethods(this);
-        }
-
-        this.props = props;
-        this.context = context;
-        this.refs = emptyObject;
-        this.updater = updater || ReactNoopUpdateQueue;
-        this.state = null;
-        var initialState = this.getInitialState ? this.getInitialState() : null;
-
-        _invariant(typeof initialState === 'object' && !Array.isArray(initialState), '%s.getInitialState(): must return an object or null', Constructor.displayName || 'ReactCompositeComponent');
-
-        this.state = initialState;
-      });
-      Constructor.prototype = new ReactClassComponent();
-      Constructor.prototype.constructor = Constructor;
-      Constructor.prototype.__reactAutoBindPairs = [];
-      injectedMixins.forEach(mixSpecIntoComponent.bind(null, Constructor));
-      mixSpecIntoComponent(Constructor, IsMountedPreMixin);
-      mixSpecIntoComponent(Constructor, spec);
-      mixSpecIntoComponent(Constructor, IsMountedPostMixin);
-
-      if (Constructor.getDefaultProps) {
-        Constructor.defaultProps = Constructor.getDefaultProps();
-      }
-
-      _invariant(Constructor.prototype.render, 'createClass(...): Class specification must implement a `render` method.');
-
-      for (var methodName in ReactClassInterface) {
-        if (!Constructor.prototype[methodName]) {
-          Constructor.prototype[methodName] = null;
-        }
-      }
-
-      return Constructor;
-    }
-
-    return createClass;
-  }
-
-  module.exports = factory;
-},226,[53,227,6]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var emptyObject = {};
-  module.exports = emptyObject;
-},227,[]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var invariant = _$$_REQUIRE(_dependencyMap[0]);
-
-  var ensurePositiveDelayProps = function ensurePositiveDelayProps(props) {
-    invariant(!(props.delayPressIn < 0 || props.delayPressOut < 0 || props.delayLongPress < 0), 'Touchable components cannot have negative delay properties');
-  };
-
-  module.exports = ensurePositiveDelayProps;
-},245,[6]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  module.exports = {
-    AccessibilityTraits: ['none', 'button', 'link', 'header', 'search', 'image', 'selected', 'plays', 'key', 'text', 'summary', 'disabled', 'frequentUpdates', 'startsMedia', 'adjustable', 'allowsDirectInteraction', 'pageTurn'],
-    AccessibilityComponentTypes: ['none', 'button', 'radiobutton_checked', 'radiobutton_unchecked'],
-    AccessibilityRoles: ['none', 'button', 'link', 'search', 'image', 'keyboardkey', 'text', 'adjustable', 'imagebutton', 'header', 'summary'],
-    AccessibilityStates: ['selected', 'disabled']
-  };
-},246,[]);
+  module.exports = DummyTouchableNativeFeedback;
+},179,[21,22,34,37,40,51,54,167,80]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -21125,7 +20445,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     FlatList: AnimatedImplementation.createAnimatedComponent(FlatList),
     SectionList: AnimatedImplementation.createAnimatedComponent(SectionList)
   });
-},181,[48,182,210,857,216,241,167,80]);
+},181,[48,182,210,238,216,241,167,80]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -25963,7 +25283,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         },
         scrollRenderAheadDistance: DEFAULT_SCROLL_RENDER_AHEAD,
         onEndReachedThreshold: DEFAULT_END_REACHED_THRESHOLD,
-        stickySectionHeadersEnabled: false,
+        stickySectionHeadersEnabled: true,
         stickyHeaderIndices: []
       };
     },
@@ -26325,7 +25645,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
   });
   module.exports = ListView;
-},212,[3,9,213,214,853,51,83,8,216,217,229,230,80,231,225,215,163,104,6]);
+},212,[3,9,213,214,50,51,83,8,216,217,229,230,80,231,225,215,163,104,6]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
 
@@ -26691,9 +26011,8 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var RCTScrollView;
   var RCTScrollContentView;
   {
-    AndroidScrollView = requireNativeComponent('RCTScrollView');
-    AndroidHorizontalScrollView = requireNativeComponent('AndroidHorizontalScrollView');
-    AndroidHorizontalScrollContentView = requireNativeComponent('AndroidHorizontalScrollContentView');
+    RCTScrollView = requireNativeComponent('RCTScrollView');
+    RCTScrollContentView = requireNativeComponent('RCTScrollContentView');
   }
   var ScrollView = createReactClass({
     displayName: 'ScrollView',
@@ -26825,11 +26144,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       }
     },
     _handleScroll: function _handleScroll(e) {
-      {
-        if (this.props.keyboardDismissMode === 'on-drag' && this.state.isTouching) {
-          dismissKeyboard();
-        }
-      }
       this.scrollResponderHandleScroll(e);
     },
     _handleLayout: function _handleLayout(e) {
@@ -26863,13 +26177,8 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       var ScrollViewClass;
       var ScrollContentContainerViewClass;
       {
-        if (this.props.horizontal) {
-          ScrollViewClass = AndroidHorizontalScrollView;
-          ScrollContentContainerViewClass = AndroidHorizontalScrollContentView;
-        } else {
-          ScrollViewClass = AndroidScrollView;
-          ScrollContentContainerViewClass = View;
-        }
+        ScrollViewClass = RCTScrollView;
+        ScrollContentContainerViewClass = RCTScrollContentView;
       }
       invariant(ScrollViewClass !== undefined, 'ScrollViewClass must not be undefined');
       invariant(ScrollContentContainerViewClass !== undefined, 'ScrollContentContainerViewClass must not be undefined');
@@ -26911,7 +26220,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       var contentContainer = React.createElement(ScrollContentContainerViewClass, _extends({}, contentSizeChangeProps, {
         ref: this._setInnerViewRef,
         style: contentContainerStyle,
-        removeClippedSubviews: hasStickyHeaders ? false : this.props.removeClippedSubviews,
+        removeClippedSubviews: this.props.removeClippedSubviews,
         collapsable: false
       }), children);
       var alwaysBounceHorizontal = this.props.alwaysBounceHorizontal !== undefined ? this.props.alwaysBounceHorizontal : this.props.horizontal;
@@ -26946,7 +26255,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         scrollEventThrottle: hasStickyHeaders ? 1 : this.props.scrollEventThrottle,
         sendMomentumEvents: this.props.onMomentumScrollBegin || this.props.onMomentumScrollEnd ? true : false,
         DEPRECATED_sendUpdatedChildFrames: DEPRECATED_sendUpdatedChildFrames,
-        pagingEnabled: this.props.pagingEnabled || this.props.snapToInterval != null || this.props.snapToOffsets != null
+        pagingEnabled: this.props.pagingEnabled && this.props.snapToInterval == null && this.props.snapToOffsets == null
       });
 
       var decelerationRate = this.props.decelerationRate;
@@ -26959,12 +26268,9 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
       if (refreshControl) {
         {
-          return React.cloneElement(refreshControl, {
-            style: props.style
-          }, React.createElement(ScrollViewClass, _extends({}, props, {
-            style: baseStyle,
+          return React.createElement(ScrollViewClass, _extends({}, props, {
             ref: this._setScrollViewRef
-          }), contentContainer));
+          }), Platform.isTV ? null : refreshControl, contentContainer);
         }
       }
 
@@ -26992,7 +26298,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
   });
   module.exports = TypedScrollView;
-},216,[3,48,182,853,51,83,217,223,54,80,224,225,221,79,6,228,146,104,152]);
+},216,[3,48,182,50,51,83,217,223,54,80,224,225,221,79,6,228,146,104,152]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -27668,20 +26974,349 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
+  var React = _$$_REQUIRE(_dependencyMap[0]);
+
+  var factory = _$$_REQUIRE(_dependencyMap[1]);
+
+  if (typeof React === 'undefined') {
+    throw Error("create-react-class could not find the React object. If you are using script tags, make sure that React is being loaded before create-react-class.");
+  }
+
+  var ReactNoopUpdateQueue = new React.Component().updater;
+  module.exports = factory(React.Component, React.isValidElement, ReactNoopUpdateQueue);
+},225,[51,226]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var _assign = _$$_REQUIRE(_dependencyMap[0]);
+
+  var emptyObject = _$$_REQUIRE(_dependencyMap[1]);
+
+  var _invariant = _$$_REQUIRE(_dependencyMap[2]);
+
+  var MIXINS_KEY = 'mixins';
+
+  function identity(fn) {
+    return fn;
+  }
+
+  var ReactPropTypeLocationNames;
+  {
+    ReactPropTypeLocationNames = {};
+  }
+
+  function factory(ReactComponent, isValidElement, ReactNoopUpdateQueue) {
+    var injectedMixins = [];
+    var ReactClassInterface = {
+      mixins: 'DEFINE_MANY',
+      statics: 'DEFINE_MANY',
+      propTypes: 'DEFINE_MANY',
+      contextTypes: 'DEFINE_MANY',
+      childContextTypes: 'DEFINE_MANY',
+      getDefaultProps: 'DEFINE_MANY_MERGED',
+      getInitialState: 'DEFINE_MANY_MERGED',
+      getChildContext: 'DEFINE_MANY_MERGED',
+      render: 'DEFINE_ONCE',
+      componentWillMount: 'DEFINE_MANY',
+      componentDidMount: 'DEFINE_MANY',
+      componentWillReceiveProps: 'DEFINE_MANY',
+      shouldComponentUpdate: 'DEFINE_ONCE',
+      componentWillUpdate: 'DEFINE_MANY',
+      componentDidUpdate: 'DEFINE_MANY',
+      componentWillUnmount: 'DEFINE_MANY',
+      UNSAFE_componentWillMount: 'DEFINE_MANY',
+      UNSAFE_componentWillReceiveProps: 'DEFINE_MANY',
+      UNSAFE_componentWillUpdate: 'DEFINE_MANY',
+      updateComponent: 'OVERRIDE_BASE'
+    };
+    var ReactClassStaticInterface = {
+      getDerivedStateFromProps: 'DEFINE_MANY_MERGED'
+    };
+    var RESERVED_SPEC_KEYS = {
+      displayName: function displayName(Constructor, _displayName) {
+        Constructor.displayName = _displayName;
+      },
+      mixins: function mixins(Constructor, _mixins) {
+        if (_mixins) {
+          for (var i = 0; i < _mixins.length; i++) {
+            mixSpecIntoComponent(Constructor, _mixins[i]);
+          }
+        }
+      },
+      childContextTypes: function childContextTypes(Constructor, _childContextTypes) {
+        Constructor.childContextTypes = _assign({}, Constructor.childContextTypes, _childContextTypes);
+      },
+      contextTypes: function contextTypes(Constructor, _contextTypes) {
+        Constructor.contextTypes = _assign({}, Constructor.contextTypes, _contextTypes);
+      },
+      getDefaultProps: function getDefaultProps(Constructor, _getDefaultProps) {
+        if (Constructor.getDefaultProps) {
+          Constructor.getDefaultProps = createMergedResultFunction(Constructor.getDefaultProps, _getDefaultProps);
+        } else {
+          Constructor.getDefaultProps = _getDefaultProps;
+        }
+      },
+      propTypes: function propTypes(Constructor, _propTypes) {
+        Constructor.propTypes = _assign({}, Constructor.propTypes, _propTypes);
+      },
+      statics: function statics(Constructor, _statics) {
+        mixStaticSpecIntoComponent(Constructor, _statics);
+      },
+      autobind: function autobind() {}
+    };
+
+    function validateTypeDef(Constructor, typeDef, location) {
+      for (var propName in typeDef) {
+        if (typeDef.hasOwnProperty(propName)) {}
+      }
+    }
+
+    function validateMethodOverride(isAlreadyDefined, name) {
+      var specPolicy = ReactClassInterface.hasOwnProperty(name) ? ReactClassInterface[name] : null;
+
+      if (ReactClassMixin.hasOwnProperty(name)) {
+        _invariant(specPolicy === 'OVERRIDE_BASE', "ReactClassInterface: You are attempting to override `%s` from your class specification. Ensure that your method names do not overlap with React methods.", name);
+      }
+
+      if (isAlreadyDefined) {
+        _invariant(specPolicy === 'DEFINE_MANY' || specPolicy === 'DEFINE_MANY_MERGED', "ReactClassInterface: You are attempting to define `%s` on your component more than once. This conflict may be due to a mixin.", name);
+      }
+    }
+
+    function mixSpecIntoComponent(Constructor, spec) {
+      if (!spec) {
+        return;
+      }
+
+      _invariant(typeof spec !== 'function', "ReactClass: You're attempting to use a component class or function as a mixin. Instead, just use a regular object.");
+
+      _invariant(!isValidElement(spec), "ReactClass: You're attempting to use a component as a mixin. Instead, just use a regular object.");
+
+      var proto = Constructor.prototype;
+      var autoBindPairs = proto.__reactAutoBindPairs;
+
+      if (spec.hasOwnProperty(MIXINS_KEY)) {
+        RESERVED_SPEC_KEYS.mixins(Constructor, spec.mixins);
+      }
+
+      for (var name in spec) {
+        if (!spec.hasOwnProperty(name)) {
+          continue;
+        }
+
+        if (name === MIXINS_KEY) {
+          continue;
+        }
+
+        var property = spec[name];
+        var isAlreadyDefined = proto.hasOwnProperty(name);
+        validateMethodOverride(isAlreadyDefined, name);
+
+        if (RESERVED_SPEC_KEYS.hasOwnProperty(name)) {
+          RESERVED_SPEC_KEYS[name](Constructor, property);
+        } else {
+          var isReactClassMethod = ReactClassInterface.hasOwnProperty(name);
+          var isFunction = typeof property === 'function';
+          var shouldAutoBind = isFunction && !isReactClassMethod && !isAlreadyDefined && spec.autobind !== false;
+
+          if (shouldAutoBind) {
+            autoBindPairs.push(name, property);
+            proto[name] = property;
+          } else {
+            if (isAlreadyDefined) {
+              var specPolicy = ReactClassInterface[name];
+
+              _invariant(isReactClassMethod && (specPolicy === 'DEFINE_MANY_MERGED' || specPolicy === 'DEFINE_MANY'), "ReactClass: Unexpected spec policy %s for key %s when mixing in component specs.", specPolicy, name);
+
+              if (specPolicy === 'DEFINE_MANY_MERGED') {
+                proto[name] = createMergedResultFunction(proto[name], property);
+              } else if (specPolicy === 'DEFINE_MANY') {
+                proto[name] = createChainedFunction(proto[name], property);
+              }
+            } else {
+              proto[name] = property;
+            }
+          }
+        }
+      }
+    }
+
+    function mixStaticSpecIntoComponent(Constructor, statics) {
+      if (!statics) {
+        return;
+      }
+
+      for (var name in statics) {
+        var property = statics[name];
+
+        if (!statics.hasOwnProperty(name)) {
+          continue;
+        }
+
+        var isReserved = name in RESERVED_SPEC_KEYS;
+
+        _invariant(!isReserved, "ReactClass: You are attempting to define a reserved property, `%s`, that shouldn't be on the \"statics\" key. Define it as an instance property instead; it will still be accessible on the constructor.", name);
+
+        var isAlreadyDefined = name in Constructor;
+
+        if (isAlreadyDefined) {
+          var specPolicy = ReactClassStaticInterface.hasOwnProperty(name) ? ReactClassStaticInterface[name] : null;
+
+          _invariant(specPolicy === 'DEFINE_MANY_MERGED', "ReactClass: You are attempting to define `%s` on your component more than once. This conflict may be due to a mixin.", name);
+
+          Constructor[name] = createMergedResultFunction(Constructor[name], property);
+          return;
+        }
+
+        Constructor[name] = property;
+      }
+    }
+
+    function mergeIntoWithNoDuplicateKeys(one, two) {
+      _invariant(one && two && typeof one === 'object' && typeof two === 'object', 'mergeIntoWithNoDuplicateKeys(): Cannot merge non-objects.');
+
+      for (var key in two) {
+        if (two.hasOwnProperty(key)) {
+          _invariant(one[key] === undefined, "mergeIntoWithNoDuplicateKeys(): Tried to merge two objects with the same key: `%s`. This conflict may be due to a mixin; in particular, this may be caused by two getInitialState() or getDefaultProps() methods returning objects with clashing keys.", key);
+
+          one[key] = two[key];
+        }
+      }
+
+      return one;
+    }
+
+    function createMergedResultFunction(one, two) {
+      return function mergedResult() {
+        var a = one.apply(this, arguments);
+        var b = two.apply(this, arguments);
+
+        if (a == null) {
+          return b;
+        } else if (b == null) {
+          return a;
+        }
+
+        var c = {};
+        mergeIntoWithNoDuplicateKeys(c, a);
+        mergeIntoWithNoDuplicateKeys(c, b);
+        return c;
+      };
+    }
+
+    function createChainedFunction(one, two) {
+      return function chainedFunction() {
+        one.apply(this, arguments);
+        two.apply(this, arguments);
+      };
+    }
+
+    function bindAutoBindMethod(component, method) {
+      var boundMethod = method.bind(component);
+      return boundMethod;
+    }
+
+    function bindAutoBindMethods(component) {
+      var pairs = component.__reactAutoBindPairs;
+
+      for (var i = 0; i < pairs.length; i += 2) {
+        var autoBindKey = pairs[i];
+        var method = pairs[i + 1];
+        component[autoBindKey] = bindAutoBindMethod(component, method);
+      }
+    }
+
+    var IsMountedPreMixin = {
+      componentDidMount: function componentDidMount() {
+        this.__isMounted = true;
+      }
+    };
+    var IsMountedPostMixin = {
+      componentWillUnmount: function componentWillUnmount() {
+        this.__isMounted = false;
+      }
+    };
+    var ReactClassMixin = {
+      replaceState: function replaceState(newState, callback) {
+        this.updater.enqueueReplaceState(this, newState, callback);
+      },
+      isMounted: function isMounted() {
+        return !!this.__isMounted;
+      }
+    };
+
+    var ReactClassComponent = function ReactClassComponent() {};
+
+    _assign(ReactClassComponent.prototype, ReactComponent.prototype, ReactClassMixin);
+
+    function createClass(spec) {
+      var Constructor = identity(function (props, context, updater) {
+        if (this.__reactAutoBindPairs.length) {
+          bindAutoBindMethods(this);
+        }
+
+        this.props = props;
+        this.context = context;
+        this.refs = emptyObject;
+        this.updater = updater || ReactNoopUpdateQueue;
+        this.state = null;
+        var initialState = this.getInitialState ? this.getInitialState() : null;
+
+        _invariant(typeof initialState === 'object' && !Array.isArray(initialState), '%s.getInitialState(): must return an object or null', Constructor.displayName || 'ReactCompositeComponent');
+
+        this.state = initialState;
+      });
+      Constructor.prototype = new ReactClassComponent();
+      Constructor.prototype.constructor = Constructor;
+      Constructor.prototype.__reactAutoBindPairs = [];
+      injectedMixins.forEach(mixSpecIntoComponent.bind(null, Constructor));
+      mixSpecIntoComponent(Constructor, IsMountedPreMixin);
+      mixSpecIntoComponent(Constructor, spec);
+      mixSpecIntoComponent(Constructor, IsMountedPostMixin);
+
+      if (Constructor.getDefaultProps) {
+        Constructor.defaultProps = Constructor.getDefaultProps();
+      }
+
+      _invariant(Constructor.prototype.render, 'createClass(...): Class specification must implement a `render` method.');
+
+      for (var methodName in ReactClassInterface) {
+        if (!Constructor.prototype[methodName]) {
+          Constructor.prototype[methodName] = null;
+        }
+      }
+
+      return Constructor;
+    }
+
+    return createClass;
+  }
+
+  module.exports = factory;
+},226,[53,227,6]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var emptyObject = {};
+  module.exports = emptyObject;
+},227,[]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
   var Platform = _$$_REQUIRE(_dependencyMap[0]);
 
   function processDecelerationRate(decelerationRate) {
     if (decelerationRate === 'normal') {
-      return 0.985;
+      return 0.998;
     } else if (decelerationRate === 'fast') {
-      return 0.9;
+      return 0.99;
     }
 
     return decelerationRate;
   }
 
   module.exports = processDecelerationRate;
-},228,[853]);
+},228,[50]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -27729,6 +27364,97 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   };
   module.exports = StaticRenderer;
 },229,[21,22,34,37,40,51,65]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var GLOBAL = typeof window === 'undefined' ? global : window;
+
+  var setter = function setter(_setter, _clearer, array) {
+    return function (callback, delta) {
+      var id = _setter(function () {
+        _clearer.call(this, id);
+
+        callback.apply(this, arguments);
+      }.bind(this), delta);
+
+      if (!this[array]) {
+        this[array] = [id];
+      } else {
+        this[array].push(id);
+      }
+
+      return id;
+    };
+  };
+
+  var clearer = function clearer(_clearer, array) {
+    return function (id) {
+      if (this[array]) {
+        var index = this[array].indexOf(id);
+
+        if (index !== -1) {
+          this[array].splice(index, 1);
+        }
+      }
+
+      _clearer(id);
+    };
+  };
+
+  var _timeouts = 'TimerMixin_timeouts';
+
+  var _clearTimeout = clearer(GLOBAL.clearTimeout, _timeouts);
+
+  var _setTimeout = setter(GLOBAL.setTimeout, _clearTimeout, _timeouts);
+
+  var _intervals = 'TimerMixin_intervals';
+
+  var _clearInterval = clearer(GLOBAL.clearInterval, _intervals);
+
+  var _setInterval = setter(GLOBAL.setInterval, function () {}, _intervals);
+
+  var _immediates = 'TimerMixin_immediates';
+
+  var _clearImmediate = clearer(GLOBAL.clearImmediate, _immediates);
+
+  var _setImmediate = setter(GLOBAL.setImmediate, _clearImmediate, _immediates);
+
+  var _rafs = 'TimerMixin_rafs';
+
+  var _cancelAnimationFrame = clearer(GLOBAL.cancelAnimationFrame, _rafs);
+
+  var _requestAnimationFrame = setter(GLOBAL.requestAnimationFrame, _cancelAnimationFrame, _rafs);
+
+  var TimerMixin = {
+    componentWillUnmount: function componentWillUnmount() {
+      this[_timeouts] && this[_timeouts].forEach(function (id) {
+        GLOBAL.clearTimeout(id);
+      });
+      this[_timeouts] = null;
+      this[_intervals] && this[_intervals].forEach(function (id) {
+        GLOBAL.clearInterval(id);
+      });
+      this[_intervals] = null;
+      this[_immediates] && this[_immediates].forEach(function (id) {
+        GLOBAL.clearImmediate(id);
+      });
+      this[_immediates] = null;
+      this[_rafs] && this[_rafs].forEach(function (id) {
+        GLOBAL.cancelAnimationFrame(id);
+      });
+      this[_rafs] = null;
+    },
+    setTimeout: _setTimeout,
+    clearTimeout: _clearTimeout,
+    setInterval: _setInterval,
+    clearInterval: _clearInterval,
+    setImmediate: _setImmediate,
+    clearImmediate: _clearImmediate,
+    requestAnimationFrame: _requestAnimationFrame,
+    cancelAnimationFrame: _cancelAnimationFrame
+  };
+  module.exports = TimerMixin;
+},230,[]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -27789,13 +27515,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var nullthrows = _$$_REQUIRE(_dependencyMap[10]);
 
   {
-    var AndroidSwipeRefreshLayout = _$$_REQUIRE(_dependencyMap[11]).AndroidSwipeRefreshLayout;
-
-    var RefreshLayoutConsts = AndroidSwipeRefreshLayout ? AndroidSwipeRefreshLayout.Constants : {
+    var RefreshLayoutConsts = {
       SIZE: {}
     };
   }
-  var NativeRefreshControl = requireNativeComponent('AndroidSwipeRefreshLayout');
+  var NativeRefreshControl = requireNativeComponent('RCTRefreshControl');
 
   var RefreshControl = function (_React$Component) {
     _inherits(RefreshControl, _React$Component);
@@ -27861,7 +27585,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   RefreshControl.SIZE = RefreshLayoutConsts.SIZE;
   module.exports = RefreshControl;
-},232,[3,21,22,34,37,40,853,51,83,146,178,71]);
+},232,[3,21,22,34,37,40,50,51,83,146,178]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -29938,178 +29662,87 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var _regeneratorRuntime = _$$_REQUIRE(_dependencyMap[0]);
+  var _extends = _$$_REQUIRE(_dependencyMap[0]);
 
-  var _objectSpread = _$$_REQUIRE(_dependencyMap[1]);
+  var ImageProps = _$$_REQUIRE(_dependencyMap[1]);
 
-  var ImageStylePropTypes = _$$_REQUIRE(_dependencyMap[2]);
+  var NativeModules = _$$_REQUIRE(_dependencyMap[2]);
 
-  var NativeModules = _$$_REQUIRE(_dependencyMap[3]);
+  var React = _$$_REQUIRE(_dependencyMap[3]);
 
-  var React = _$$_REQUIRE(_dependencyMap[4]);
+  var ReactNative = _$$_REQUIRE(_dependencyMap[4]);
 
-  var ReactNative = _$$_REQUIRE(_dependencyMap[5]);
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[5]);
 
-  var PropTypes = _$$_REQUIRE(_dependencyMap[6]);
+  var flattenStyle = _$$_REQUIRE(_dependencyMap[6]);
 
-  var StyleSheet = _$$_REQUIRE(_dependencyMap[7]);
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[7]);
 
-  var StyleSheetPropType = _$$_REQUIRE(_dependencyMap[8]);
+  var resolveAssetSource = _$$_REQUIRE(_dependencyMap[8]);
 
-  var TextAncestor = _$$_REQUIRE(_dependencyMap[9]);
+  var ImageViewManager = NativeModules.ImageViewManager;
+  var RCTImageView = requireNativeComponent('RCTImageView');
 
-  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[10]);
-
-  var flattenStyle = _$$_REQUIRE(_dependencyMap[11]);
-
-  var merge = _$$_REQUIRE(_dependencyMap[12]);
-
-  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[13]);
-
-  var resolveAssetSource = _$$_REQUIRE(_dependencyMap[14]);
-
-  var ImageLoader = NativeModules.ImageLoader;
-  var RKImage = requireNativeComponent('RCTImageView');
-  var RCTTextInlineImage = requireNativeComponent('RCTTextInlineImage');
-  var _requestId = 1;
-
-  function generateRequestId() {
-    return _requestId++;
-  }
-
-  var ImageProps = _objectSpread({}, ViewPropTypes, {
-    style: StyleSheetPropType(ImageStylePropTypes),
-    source: PropTypes.oneOfType([PropTypes.shape({
-      uri: PropTypes.string,
-      headers: PropTypes.objectOf(PropTypes.string)
-    }), PropTypes.number, PropTypes.arrayOf(PropTypes.shape({
-      uri: PropTypes.string,
-      width: PropTypes.number,
-      height: PropTypes.number,
-      headers: PropTypes.objectOf(PropTypes.string)
-    }))]),
-    blurRadius: PropTypes.number,
-    defaultSource: PropTypes.number,
-    loadingIndicatorSource: PropTypes.oneOfType([PropTypes.shape({
-      uri: PropTypes.string
-    }), PropTypes.number]),
-    progressiveRenderingEnabled: PropTypes.bool,
-    fadeDuration: PropTypes.number,
-    onLoadStart: PropTypes.func,
-    onError: PropTypes.func,
-    onLoad: PropTypes.func,
-    onLoadEnd: PropTypes.func,
-    testID: PropTypes.string,
-    resizeMethod: PropTypes.oneOf(['auto', 'resize', 'scale']),
-    resizeMode: PropTypes.oneOf(['cover', 'contain', 'stretch', 'repeat', 'center'])
-  });
-
-  function getSize(url, success, failure) {
-    return ImageLoader.getSize(url).then(function (sizes) {
-      success(sizes.width, sizes.height);
-    }).catch(failure || function () {
-      console.warn('Failed to get size for image: ' + url);
+  function getSize(uri, success, failure) {
+    ImageViewManager.getSize(uri, success, failure || function () {
+      console.warn('Failed to get size for image: ' + uri);
     });
   }
 
-  function prefetch(url, callback) {
-    var requestId = generateRequestId();
-    callback && callback(requestId);
-    return ImageLoader.prefetchImage(url, requestId);
-  }
-
-  function abortPrefetch(requestId) {
-    ImageLoader.abortRequest(requestId);
-  }
-
-  function queryCache(urls) {
-    return _regeneratorRuntime.async(function queryCache$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            _context.next = 2;
-            return _regeneratorRuntime.awrap(ImageLoader.queryCache(urls));
-
-          case 2:
-            return _context.abrupt("return", _context.sent);
-
-          case 3:
-          case "end":
-            return _context.stop();
-        }
-      }
-    }, null, this);
+  function prefetch(url) {
+    return ImageViewManager.prefetchImage(url);
   }
 
   var Image = function Image(props, forwardedRef) {
-    var _source, _source3;
-
-    var source = resolveAssetSource(props.source);
-    var defaultSource = resolveAssetSource(props.defaultSource);
-    var loadingIndicatorSource = resolveAssetSource(props.loadingIndicatorSource);
-
-    if (source && source.uri === '') {
-      console.warn('source.uri should not be an empty string');
-    }
-
-    if (props.src) {
-      console.warn('The <Image> component requires a `source` property rather than `src`.');
-    }
-
-    if (props.children) {
-      throw new Error('The <Image> component cannot contain children. If you want to render content on top of the image, consider using the <ImageBackground> component or absolute positioning.');
-    }
-
-    if (props.defaultSource && props.loadingIndicatorSource) {
-      throw new Error('The <Image> component cannot have defaultSource and loadingIndicatorSource at the same time. Please use either defaultSource or loadingIndicatorSource.');
-    }
-
-    if (source && !source.uri && !Array.isArray(source)) {
-      source = null;
-    }
-
-    var style;
+    var source = resolveAssetSource(props.source) || {
+      uri: undefined,
+      width: undefined,
+      height: undefined
+    };
     var sources;
+    var style;
 
-    if (((_source = source) == null ? undefined : _source.uri) != null) {
-      var _source2 = source,
-          _width = _source2.width,
-          _height = _source2.height;
+    if (Array.isArray(source)) {
+      style = flattenStyle([styles.base, props.style]) || {};
+      sources = source;
+    } else {
+      var _width = source.width,
+          _height = source.height,
+          uri = source.uri;
       style = flattenStyle([{
         width: _width,
         height: _height
-      }, styles.base, props.style]);
-      sources = [{
-        uri: source.uri
-      }];
-    } else {
-      style = flattenStyle([styles.base, props.style]);
-      sources = source;
+      }, styles.base, props.style]) || {};
+      sources = [source];
+
+      if (uri === '') {
+        console.warn('source.uri should not be an empty string');
+      }
     }
 
-    var onLoadStart = props.onLoadStart,
-        onLoad = props.onLoad,
-        onLoadEnd = props.onLoadEnd,
-        onError = props.onError;
-    var nativeProps = merge(props, {
+    var resizeMode = props.resizeMode || style.resizeMode || 'cover';
+    var tintColor = style.tintColor;
+
+    if (props.src != null) {
+      console.warn('The <Image> component requires a `source` property rather than `src`.');
+    }
+
+    if (props.children != null) {
+      throw new Error('The <Image> component cannot contain children. If you want to render content on top of the image, consider using the <ImageBackground> component or absolute positioning.');
+    }
+
+    return React.createElement(RCTImageView, _extends({}, props, {
+      ref: forwardedRef,
       style: style,
-      shouldNotifyLoadEvents: !!(onLoadStart || onLoad || onLoadEnd || onError),
-      src: sources,
-      headers: (_source3 = source) == null ? undefined : _source3.headers,
-      defaultSrc: defaultSource ? defaultSource.uri : null,
-      loadingIndicatorSrc: loadingIndicatorSource ? loadingIndicatorSource.uri : null,
-      ref: forwardedRef
-    });
-    return React.createElement(TextAncestor.Consumer, null, function (hasTextAncestor) {
-      return hasTextAncestor ? React.createElement(RCTTextInlineImage, nativeProps) : React.createElement(RKImage, nativeProps);
-    });
+      resizeMode: resizeMode,
+      tintColor: tintColor,
+      source: sources
+    }));
   };
 
   Image = React.forwardRef(Image);
   Image.getSize = getSize;
   Image.prefetch = prefetch;
-  Image.abortPrefetch = abortPrefetch;
-  Image.queryCache = queryCache;
   Image.resolveAssetSource = resolveAssetSource;
   Image.propTypes = ImageProps;
   var styles = StyleSheet.create({
@@ -30118,98 +29751,64 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
   });
   module.exports = Image;
-},857,[130,48,59,8,51,83,65,54,170,81,256,79,163,146,152]);
+},238,[3,239,8,51,83,54,79,146,152]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var _objectSpread = _$$_REQUIRE(_dependencyMap[0]);
+  var EdgeInsetsPropType = _$$_REQUIRE(_dependencyMap[0]);
 
-  var React = _$$_REQUIRE(_dependencyMap[1]);
+  var ImageSourcePropType = _$$_REQUIRE(_dependencyMap[1]);
 
-  var EdgeInsetsPropType = _$$_REQUIRE(_dependencyMap[2]);
+  var ImageStylePropTypes = _$$_REQUIRE(_dependencyMap[2]);
 
-  var PlatformViewPropTypes = _$$_REQUIRE(_dependencyMap[3]);
+  var PropTypes = _$$_REQUIRE(_dependencyMap[3]);
 
-  var PropTypes = _$$_REQUIRE(_dependencyMap[4]);
+  var StyleSheetPropType = _$$_REQUIRE(_dependencyMap[4]);
 
-  var StyleSheetPropType = _$$_REQUIRE(_dependencyMap[5]);
-
-  var ViewStylePropTypes = _$$_REQUIRE(_dependencyMap[6]);
-
-  var _require = _$$_REQUIRE(_dependencyMap[7]),
-      AccessibilityComponentTypes = _require.AccessibilityComponentTypes,
-      AccessibilityTraits = _require.AccessibilityTraits,
-      AccessibilityRoles = _require.AccessibilityRoles,
-      AccessibilityStates = _require.AccessibilityStates;
-
-  var stylePropType = StyleSheetPropType(ViewStylePropTypes);
-  module.exports = _objectSpread({
+  module.exports = {
+    style: StyleSheetPropType(ImageStylePropTypes),
+    source: ImageSourcePropType,
+    defaultSource: PropTypes.oneOfType([PropTypes.shape({
+      uri: PropTypes.string,
+      width: PropTypes.number,
+      height: PropTypes.number,
+      scale: PropTypes.number
+    }), PropTypes.number]),
     accessible: PropTypes.bool,
     accessibilityLabel: PropTypes.node,
-    accessibilityHint: PropTypes.string,
-    accessibilityActions: PropTypes.arrayOf(PropTypes.string),
-    accessibilityIgnoresInvertColors: PropTypes.bool,
-    accessibilityComponentType: PropTypes.oneOf(AccessibilityComponentTypes),
-    accessibilityRole: PropTypes.oneOf(AccessibilityRoles),
-    accessibilityStates: PropTypes.arrayOf(PropTypes.oneOf(AccessibilityStates)),
-    accessibilityLiveRegion: PropTypes.oneOf(['none', 'polite', 'assertive']),
-    importantForAccessibility: PropTypes.oneOf(['auto', 'yes', 'no', 'no-hide-descendants']),
-    accessibilityTraits: PropTypes.oneOfType([PropTypes.oneOf(AccessibilityTraits), PropTypes.arrayOf(PropTypes.oneOf(AccessibilityTraits))]),
-    accessibilityViewIsModal: PropTypes.bool,
-    accessibilityElementsHidden: PropTypes.bool,
-    onAccessibilityAction: PropTypes.func,
-    onAccessibilityTap: PropTypes.func,
-    onMagicTap: PropTypes.func,
+    blurRadius: PropTypes.number,
+    capInsets: EdgeInsetsPropType,
+    resizeMethod: PropTypes.oneOf(['auto', 'resize', 'scale']),
+    resizeMode: PropTypes.oneOf(['cover', 'contain', 'stretch', 'repeat', 'center']),
     testID: PropTypes.string,
-    nativeID: PropTypes.string,
-    onResponderGrant: PropTypes.func,
-    onResponderMove: PropTypes.func,
-    onResponderReject: PropTypes.func,
-    onResponderRelease: PropTypes.func,
-    onResponderTerminate: PropTypes.func,
-    onResponderTerminationRequest: PropTypes.func,
-    onStartShouldSetResponder: PropTypes.func,
-    onStartShouldSetResponderCapture: PropTypes.func,
-    onMoveShouldSetResponder: PropTypes.func,
-    onMoveShouldSetResponderCapture: PropTypes.func,
-    hitSlop: EdgeInsetsPropType,
     onLayout: PropTypes.func,
-    pointerEvents: PropTypes.oneOf(['box-none', 'none', 'box-only', 'auto']),
-    style: stylePropType,
-    removeClippedSubviews: PropTypes.bool,
-    renderToHardwareTextureAndroid: PropTypes.bool,
-    shouldRasterizeIOS: PropTypes.bool,
-    collapsable: PropTypes.bool,
-    needsOffscreenAlphaCompositing: PropTypes.bool
-  }, PlatformViewPropTypes);
-},256,[48,51,169,257,65,170,73,246]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  var Platform = _$$_REQUIRE(_dependencyMap[0]);
-
-  var TVViewPropTypes = {};
-
-  if (Platform.isTV || true) {
-    TVViewPropTypes = _$$_REQUIRE(_dependencyMap[1]);
-  }
-
-  module.exports = TVViewPropTypes;
-},257,[853,258]);
+    onLoadStart: PropTypes.func,
+    onProgress: PropTypes.func,
+    onError: PropTypes.func,
+    onPartialLoad: PropTypes.func,
+    onLoad: PropTypes.func,
+    onLoadEnd: PropTypes.func
+  };
+},239,[169,240,59,65,170]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
   var PropTypes = _$$_REQUIRE(_dependencyMap[0]);
 
-  var TVViewPropTypes = {
-    isTVSelectable: PropTypes.bool,
-    hasTVPreferredFocus: PropTypes.bool,
-    tvParallaxProperties: PropTypes.object,
-    tvParallaxShiftDistanceX: PropTypes.number,
-    tvParallaxShiftDistanceY: PropTypes.number,
-    tvParallaxTiltAngle: PropTypes.number,
-    tvParallaxMagnification: PropTypes.number
-  };
-  module.exports = TVViewPropTypes;
-},258,[65]);
+  var ImageURISourcePropType = PropTypes.shape({
+    uri: PropTypes.string,
+    bundle: PropTypes.string,
+    method: PropTypes.string,
+    headers: PropTypes.objectOf(PropTypes.string),
+    body: PropTypes.string,
+    cache: PropTypes.oneOf(['default', 'reload', 'force-cache', 'only-if-cached']),
+    width: PropTypes.number,
+    height: PropTypes.number,
+    scale: PropTypes.number
+  });
+  var ImageSourcePropType = PropTypes.oneOfType([ImageURISourcePropType, PropTypes.number, PropTypes.arrayOf(ImageURISourcePropType)]);
+  module.exports = ImageSourcePropType;
+},240,[65]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -30238,7 +29837,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var VirtualizedSectionList = _$$_REQUIRE(_dependencyMap[11]);
 
   var defaultProps = _objectSpread({}, VirtualizedSectionList.defaultProps, {
-    stickySectionHeadersEnabled: false
+    stickySectionHeadersEnabled: true
   });
 
   var SectionList = function (_React$PureComponent) {
@@ -30325,7 +29924,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   SectionList.defaultProps = defaultProps;
   module.exports = SectionList;
-},241,[3,21,22,34,37,40,48,211,853,51,216,242]);
+},241,[3,21,22,34,37,40,48,211,50,51,216,242]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -30755,82 +30354,161 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var _extends = _$$_REQUIRE(_dependencyMap[0]);
+  var EdgeInsetsPropType = _$$_REQUIRE(_dependencyMap[0]);
 
-  var _objectSpread = _$$_REQUIRE(_dependencyMap[1]);
+  var React = _$$_REQUIRE(_dependencyMap[1]);
 
-  var NativeMethodsMixin = _$$_REQUIRE(_dependencyMap[2]);
+  var PropTypes = _$$_REQUIRE(_dependencyMap[2]);
 
-  var PropTypes = _$$_REQUIRE(_dependencyMap[3]);
+  var TimerMixin = _$$_REQUIRE(_dependencyMap[3]);
 
-  var React = _$$_REQUIRE(_dependencyMap[4]);
+  var Touchable = _$$_REQUIRE(_dependencyMap[4]);
 
-  var StyleSheet = _$$_REQUIRE(_dependencyMap[5]);
+  var View = _$$_REQUIRE(_dependencyMap[5]);
 
-  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[6]);
+  var createReactClass = _$$_REQUIRE(_dependencyMap[6]);
 
-  var createReactClass = _$$_REQUIRE(_dependencyMap[7]);
+  var ensurePositiveDelayProps = _$$_REQUIRE(_dependencyMap[7]);
 
-  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[8]);
+  var warning = _$$_REQUIRE(_dependencyMap[8]);
 
-  var RCTCheckBox = requireNativeComponent('AndroidCheckBox');
-  var CheckBox = createReactClass({
-    displayName: 'CheckBox',
-    propTypes: _objectSpread({}, ViewPropTypes, {
-      value: PropTypes.bool,
+  var _require = _$$_REQUIRE(_dependencyMap[9]),
+      AccessibilityComponentTypes = _require.AccessibilityComponentTypes,
+      AccessibilityRoles = _require.AccessibilityRoles,
+      AccessibilityStates = _require.AccessibilityStates,
+      AccessibilityTraits = _require.AccessibilityTraits;
+
+  var PRESS_RETENTION_OFFSET = {
+    top: 20,
+    left: 20,
+    right: 20,
+    bottom: 30
+  };
+  var TouchableWithoutFeedback = createReactClass({
+    displayName: 'TouchableWithoutFeedback',
+    mixins: [TimerMixin, Touchable.Mixin],
+    propTypes: {
+      accessible: PropTypes.bool,
+      accessibilityLabel: PropTypes.node,
+      accessibilityHint: PropTypes.string,
+      accessibilityComponentType: PropTypes.oneOf(AccessibilityComponentTypes),
+      accessibilityRole: PropTypes.oneOf(AccessibilityRoles),
+      accessibilityStates: PropTypes.arrayOf(PropTypes.oneOf(AccessibilityStates)),
+      accessibilityTraits: PropTypes.oneOfType([PropTypes.oneOf(AccessibilityTraits), PropTypes.arrayOf(PropTypes.oneOf(AccessibilityTraits))]),
+      onFocus: PropTypes.func,
+      onBlur: PropTypes.func,
       disabled: PropTypes.bool,
-      onChange: PropTypes.func,
-      onValueChange: PropTypes.func,
-      testID: PropTypes.string
-    }),
-    getDefaultProps: function getDefaultProps() {
-      return {
-        value: false,
-        disabled: false
-      };
+      onPress: PropTypes.func,
+      onPressIn: PropTypes.func,
+      onPressOut: PropTypes.func,
+      onLayout: PropTypes.func,
+      onLongPress: PropTypes.func,
+      nativeID: PropTypes.string,
+      testID: PropTypes.string,
+      delayPressIn: PropTypes.number,
+      delayPressOut: PropTypes.number,
+      delayLongPress: PropTypes.number,
+      pressRetentionOffset: EdgeInsetsPropType,
+      hitSlop: EdgeInsetsPropType
     },
-    mixins: [NativeMethodsMixin],
-    _rctCheckBox: {},
-    _onChange: function _onChange(event) {
-      this._rctCheckBox.setNativeProps({
-        value: this.props.value
-      });
-
-      this.props.onChange && this.props.onChange(event);
-      this.props.onValueChange && this.props.onValueChange(event.nativeEvent.value);
+    getInitialState: function getInitialState() {
+      return this.touchableGetInitialState();
+    },
+    componentDidMount: function componentDidMount() {
+      ensurePositiveDelayProps(this.props);
+    },
+    UNSAFE_componentWillReceiveProps: function UNSAFE_componentWillReceiveProps(nextProps) {
+      ensurePositiveDelayProps(nextProps);
+    },
+    touchableHandlePress: function touchableHandlePress(e) {
+      this.props.onPress && this.props.onPress(e);
+    },
+    touchableHandleActivePressIn: function touchableHandleActivePressIn(e) {
+      this.props.onPressIn && this.props.onPressIn(e);
+    },
+    touchableHandleActivePressOut: function touchableHandleActivePressOut(e) {
+      this.props.onPressOut && this.props.onPressOut(e);
+    },
+    touchableHandleLongPress: function touchableHandleLongPress(e) {
+      this.props.onLongPress && this.props.onLongPress(e);
+    },
+    touchableGetPressRectOffset: function touchableGetPressRectOffset() {
+      return this.props.pressRetentionOffset || PRESS_RETENTION_OFFSET;
+    },
+    touchableGetHitSlop: function touchableGetHitSlop() {
+      return this.props.hitSlop;
+    },
+    touchableGetHighlightDelayMS: function touchableGetHighlightDelayMS() {
+      return this.props.delayPressIn || 0;
+    },
+    touchableGetLongPressDelayMS: function touchableGetLongPressDelayMS() {
+      return this.props.delayLongPress === 0 ? 0 : this.props.delayLongPress || 500;
+    },
+    touchableGetPressOutDelayMS: function touchableGetPressOutDelayMS() {
+      return this.props.delayPressOut || 0;
     },
     render: function render() {
-      var _this = this;
+      var child = React.Children.only(this.props.children);
+      var children = child.props.children;
 
-      var props = _objectSpread({}, this.props);
+      if (Touchable.TOUCH_TARGET_DEBUG && child.type === View) {
+        children = React.Children.toArray(children);
+        children.push(Touchable.renderDebugView({
+          color: 'red',
+          hitSlop: this.props.hitSlop
+        }));
+      }
 
-      props.onStartShouldSetResponder = function () {
-        return true;
-      };
-
-      props.onResponderTerminationRequest = function () {
-        return false;
-      };
-
-      props.enabled = !this.props.disabled;
-      props.on = this.props.value;
-      props.style = [styles.rctCheckBox, this.props.style];
-      return React.createElement(RCTCheckBox, _extends({}, props, {
-        ref: function ref(_ref) {
-          _this._rctCheckBox = _ref;
-        },
-        onChange: this._onChange
-      }));
+      return React.cloneElement(child, {
+        accessible: this.props.accessible !== false,
+        accessibilityLabel: this.props.accessibilityLabel,
+        accessibilityHint: this.props.accessibilityHint,
+        accessibilityComponentType: this.props.accessibilityComponentType,
+        accessibilityRole: this.props.accessibilityRole,
+        accessibilityStates: this.props.accessibilityStates,
+        accessibilityTraits: this.props.accessibilityTraits,
+        nativeID: this.props.nativeID,
+        testID: this.props.testID,
+        onLayout: this.props.onLayout,
+        hitSlop: this.props.hitSlop,
+        onStartShouldSetResponder: this.touchableHandleStartShouldSetResponder,
+        onResponderTerminationRequest: this.touchableHandleResponderTerminationRequest,
+        onResponderGrant: this.touchableHandleResponderGrant,
+        onResponderMove: this.touchableHandleResponderMove,
+        onResponderRelease: this.touchableHandleResponderRelease,
+        onResponderTerminate: this.touchableHandleResponderTerminate,
+        children: children
+      });
     }
   });
-  var styles = StyleSheet.create({
-    rctCheckBox: {
-      height: 32,
-      width: 32
-    }
-  });
-  module.exports = CheckBox;
-},858,[3,48,243,65,51,54,256,225,146]);
+  module.exports = TouchableWithoutFeedback;
+},244,[169,51,65,230,172,80,225,245,104,246]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var invariant = _$$_REQUIRE(_dependencyMap[0]);
+
+  var ensurePositiveDelayProps = function ensurePositiveDelayProps(props) {
+    invariant(!(props.delayPressIn < 0 || props.delayPressOut < 0 || props.delayLongPress < 0), 'Touchable components cannot have negative delay properties');
+  };
+
+  module.exports = ensurePositiveDelayProps;
+},245,[6]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  module.exports = {
+    AccessibilityTraits: ['none', 'button', 'link', 'header', 'search', 'image', 'selected', 'plays', 'key', 'text', 'summary', 'disabled', 'frequentUpdates', 'startsMedia', 'adjustable', 'allowsDirectInteraction', 'pageTurn'],
+    AccessibilityComponentTypes: ['none', 'button', 'radiobutton_checked', 'radiobutton_unchecked'],
+    AccessibilityRoles: ['none', 'button', 'link', 'search', 'image', 'keyboardkey', 'text', 'adjustable', 'imagebutton', 'header', 'summary'],
+    AccessibilityStates: ['selected', 'disabled']
+  };
+},246,[]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  module.exports = _$$_REQUIRE(_dependencyMap[0]);
+},247,[248]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -30848,224 +30526,37 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var StyleSheet = _$$_REQUIRE(_dependencyMap[6]);
 
-  var Text = _$$_REQUIRE(_dependencyMap[7]);
+  var UnimplementedView = function (_React$Component) {
+    _inherits(UnimplementedView, _React$Component);
 
-  var View = _$$_REQUIRE(_dependencyMap[8]);
+    function UnimplementedView() {
+      _classCallCheck(this, UnimplementedView);
 
-  var DummyDatePickerIOS = function (_React$Component) {
-    _inherits(DummyDatePickerIOS, _React$Component);
-
-    function DummyDatePickerIOS() {
-      _classCallCheck(this, DummyDatePickerIOS);
-
-      return _possibleConstructorReturn(this, _getPrototypeOf(DummyDatePickerIOS).apply(this, arguments));
+      return _possibleConstructorReturn(this, _getPrototypeOf(UnimplementedView).apply(this, arguments));
     }
 
-    _createClass(DummyDatePickerIOS, [{
+    _createClass(UnimplementedView, [{
+      key: "setNativeProps",
+      value: function setNativeProps() {}
+    }, {
       key: "render",
       value: function render() {
+        var View = _$$_REQUIRE(_dependencyMap[7]);
+
         return React.createElement(View, {
-          style: [styles.dummyDatePickerIOS, this.props.style]
-        }, React.createElement(Text, {
-          style: styles.datePickerText
-        }, "DatePickerIOS is not supported on this platform!"));
+          style: [styles.unimplementedView, this.props.style]
+        }, this.props.children);
       }
     }]);
 
-    return DummyDatePickerIOS;
+    return UnimplementedView;
   }(React.Component);
 
   var styles = StyleSheet.create({
-    dummyDatePickerIOS: {
-      height: 100,
-      width: 300,
-      backgroundColor: '#ffbcbc',
-      borderWidth: 1,
-      borderColor: 'red',
-      alignItems: 'center',
-      justifyContent: 'center',
-      margin: 10
-    },
-    datePickerText: {
-      color: '#333333',
-      margin: 20
-    }
+    unimplementedView: {}
   });
-  module.exports = DummyDatePickerIOS;
-},859,[21,22,34,37,40,51,54,167,80]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var _extends = _$$_REQUIRE(_dependencyMap[0]);
-
-  var _objectSpread = _$$_REQUIRE(_dependencyMap[1]);
-
-  var ColorPropType = _$$_REQUIRE(_dependencyMap[2]);
-
-  var NativeMethodsMixin = _$$_REQUIRE(_dependencyMap[3]);
-
-  var Platform = _$$_REQUIRE(_dependencyMap[4]);
-
-  var React = _$$_REQUIRE(_dependencyMap[5]);
-
-  var PropTypes = _$$_REQUIRE(_dependencyMap[6]);
-
-  var ReactNative = _$$_REQUIRE(_dependencyMap[7]);
-
-  var StatusBar = _$$_REQUIRE(_dependencyMap[8]);
-
-  var StyleSheet = _$$_REQUIRE(_dependencyMap[9]);
-
-  var UIManager = _$$_REQUIRE(_dependencyMap[10]);
-
-  var View = _$$_REQUIRE(_dependencyMap[11]);
-
-  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[12]);
-
-  var DrawerConsts = UIManager.AndroidDrawerLayout.Constants;
-
-  var createReactClass = _$$_REQUIRE(_dependencyMap[13]);
-
-  var dismissKeyboard = _$$_REQUIRE(_dependencyMap[14]);
-
-  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[15]);
-
-  var RK_DRAWER_REF = 'drawerlayout';
-  var INNERVIEW_REF = 'innerView';
-  var DRAWER_STATES = ['Idle', 'Dragging', 'Settling'];
-  var DrawerLayoutAndroid = createReactClass({
-    displayName: 'DrawerLayoutAndroid',
-    statics: {
-      positions: DrawerConsts.DrawerPosition
-    },
-    propTypes: _objectSpread({}, ViewPropTypes, {
-      keyboardDismissMode: PropTypes.oneOf(['none', 'on-drag']),
-      drawerBackgroundColor: ColorPropType,
-      drawerPosition: PropTypes.oneOf([DrawerConsts.DrawerPosition.Left, DrawerConsts.DrawerPosition.Right]),
-      drawerWidth: PropTypes.number,
-      drawerLockMode: PropTypes.oneOf(['unlocked', 'locked-closed', 'locked-open']),
-      onDrawerSlide: PropTypes.func,
-      onDrawerStateChanged: PropTypes.func,
-      onDrawerOpen: PropTypes.func,
-      onDrawerClose: PropTypes.func,
-      renderNavigationView: PropTypes.func.isRequired,
-      statusBarBackgroundColor: ColorPropType
-    }),
-    mixins: [NativeMethodsMixin],
-    getDefaultProps: function getDefaultProps() {
-      return {
-        drawerBackgroundColor: 'white'
-      };
-    },
-    getInitialState: function getInitialState() {
-      return {
-        statusBarBackgroundColor: undefined
-      };
-    },
-    getInnerViewNode: function getInnerViewNode() {
-      return this.refs[INNERVIEW_REF].getInnerViewNode();
-    },
-    render: function render() {
-      var drawStatusBar = Platform.Version >= 21 && this.props.statusBarBackgroundColor;
-      var drawerViewWrapper = React.createElement(View, {
-        style: [styles.drawerSubview, {
-          width: this.props.drawerWidth,
-          backgroundColor: this.props.drawerBackgroundColor
-        }],
-        collapsable: false
-      }, this.props.renderNavigationView(), drawStatusBar && React.createElement(View, {
-        style: styles.drawerStatusBar
-      }));
-      var childrenWrapper = React.createElement(View, {
-        ref: INNERVIEW_REF,
-        style: styles.mainSubview,
-        collapsable: false
-      }, drawStatusBar && React.createElement(StatusBar, {
-        translucent: true,
-        backgroundColor: this.props.statusBarBackgroundColor
-      }), drawStatusBar && React.createElement(View, {
-        style: [styles.statusBar, {
-          backgroundColor: this.props.statusBarBackgroundColor
-        }]
-      }), this.props.children);
-      return React.createElement(AndroidDrawerLayout, _extends({}, this.props, {
-        ref: RK_DRAWER_REF,
-        drawerWidth: this.props.drawerWidth,
-        drawerPosition: this.props.drawerPosition,
-        drawerLockMode: this.props.drawerLockMode,
-        style: [styles.base, this.props.style],
-        onDrawerSlide: this._onDrawerSlide,
-        onDrawerOpen: this._onDrawerOpen,
-        onDrawerClose: this._onDrawerClose,
-        onDrawerStateChanged: this._onDrawerStateChanged
-      }), childrenWrapper, drawerViewWrapper);
-    },
-    _onDrawerSlide: function _onDrawerSlide(event) {
-      if (this.props.onDrawerSlide) {
-        this.props.onDrawerSlide(event);
-      }
-
-      if (this.props.keyboardDismissMode === 'on-drag') {
-        dismissKeyboard();
-      }
-    },
-    _onDrawerOpen: function _onDrawerOpen() {
-      if (this.props.onDrawerOpen) {
-        this.props.onDrawerOpen();
-      }
-    },
-    _onDrawerClose: function _onDrawerClose() {
-      if (this.props.onDrawerClose) {
-        this.props.onDrawerClose();
-      }
-    },
-    _onDrawerStateChanged: function _onDrawerStateChanged(event) {
-      if (this.props.onDrawerStateChanged) {
-        this.props.onDrawerStateChanged(DRAWER_STATES[event.nativeEvent.drawerState]);
-      }
-    },
-    openDrawer: function openDrawer() {
-      UIManager.dispatchViewManagerCommand(this._getDrawerLayoutHandle(), UIManager.AndroidDrawerLayout.Commands.openDrawer, null);
-    },
-    closeDrawer: function closeDrawer() {
-      UIManager.dispatchViewManagerCommand(this._getDrawerLayoutHandle(), UIManager.AndroidDrawerLayout.Commands.closeDrawer, null);
-    },
-    _getDrawerLayoutHandle: function _getDrawerLayoutHandle() {
-      return ReactNative.findNodeHandle(this.refs[RK_DRAWER_REF]);
-    }
-  });
-  var styles = StyleSheet.create({
-    base: {
-      flex: 1,
-      elevation: 16
-    },
-    mainSubview: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0
-    },
-    drawerSubview: {
-      position: 'absolute',
-      top: 0,
-      bottom: 0
-    },
-    statusBar: {
-      height: StatusBar.currentHeight
-    },
-    drawerStatusBar: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: StatusBar.currentHeight,
-      backgroundColor: 'rgba(0, 0, 0, 0.251)'
-    }
-  });
-  var AndroidDrawerLayout = requireNativeComponent('AndroidDrawerLayout');
-  module.exports = DrawerLayoutAndroid;
-},860,[3,48,60,243,853,51,65,83,277,54,71,80,256,225,221,146]);
+  module.exports = UnimplementedView;
+},248,[21,22,34,37,40,51,54,80]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -31079,205 +30570,107 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var _inherits = _$$_REQUIRE(_dependencyMap[4]);
 
-  var _extends = _$$_REQUIRE(_dependencyMap[5]);
+  var React = _$$_REQUIRE(_dependencyMap[5]);
 
-  var React = _$$_REQUIRE(_dependencyMap[6]);
+  var invariant = _$$_REQUIRE(_dependencyMap[6]);
 
-  var PropTypes = _$$_REQUIRE(_dependencyMap[7]);
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[7]);
 
-  var ColorPropType = _$$_REQUIRE(_dependencyMap[8]);
+  var View = _$$_REQUIRE(_dependencyMap[8]);
 
-  var Platform = _$$_REQUIRE(_dependencyMap[9]);
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[9]);
 
-  var processColor = _$$_REQUIRE(_dependencyMap[10]);
+  var RCTDatePickerIOS = requireNativeComponent('RCTDatePicker');
 
-  var StatusBarManager = _$$_REQUIRE(_dependencyMap[11]).StatusBarManager;
+  var DatePickerIOS = function (_React$Component) {
+    _inherits(DatePickerIOS, _React$Component);
 
-  function mergePropsStack(propsStack, defaultValues) {
-    return propsStack.reduce(function (prev, cur) {
-      for (var prop in cur) {
-        if (cur[prop] != null) {
-          prev[prop] = cur[prop];
-        }
-      }
-
-      return prev;
-    }, _extends({}, defaultValues));
-  }
-
-  function createStackEntry(props) {
-    return {
-      backgroundColor: props.backgroundColor != null ? {
-        value: props.backgroundColor,
-        animated: props.animated
-      } : null,
-      barStyle: props.barStyle != null ? {
-        value: props.barStyle,
-        animated: props.animated
-      } : null,
-      translucent: props.translucent,
-      hidden: props.hidden != null ? {
-        value: props.hidden,
-        animated: props.animated,
-        transition: props.showHideTransition
-      } : null,
-      networkActivityIndicatorVisible: props.networkActivityIndicatorVisible
-    };
-  }
-
-  var StatusBar = function (_React$Component) {
-    _inherits(StatusBar, _React$Component);
-
-    function StatusBar() {
+    function DatePickerIOS() {
       var _getPrototypeOf2;
 
       var _this;
 
-      _classCallCheck(this, StatusBar);
+      _classCallCheck(this, DatePickerIOS);
 
       for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
         args[_key] = arguments[_key];
       }
 
-      _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(StatusBar)).call.apply(_getPrototypeOf2, [this].concat(args)));
-      _this._stackEntry = null;
+      _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(DatePickerIOS)).call.apply(_getPrototypeOf2, [this].concat(args)));
+      _this._picker = null;
 
-      _this._updatePropsStack = function () {
-        clearImmediate(StatusBar._updateImmediate);
-        StatusBar._updateImmediate = setImmediate(function () {
-          var oldProps = StatusBar._currentValues;
-          var mergedProps = mergePropsStack(StatusBar._propsStack, StatusBar._defaultProps);
-          {
-            if (!oldProps || oldProps.barStyle.value !== mergedProps.barStyle.value) {
-              StatusBarManager.setStyle(mergedProps.barStyle.value);
-            }
-
-            if (!oldProps || oldProps.backgroundColor.value !== mergedProps.backgroundColor.value) {
-              StatusBarManager.setColor(processColor(mergedProps.backgroundColor.value), mergedProps.backgroundColor.animated);
-            }
-
-            if (!oldProps || oldProps.hidden.value !== mergedProps.hidden.value) {
-              StatusBarManager.setHidden(mergedProps.hidden.value);
-            }
-
-            if (!oldProps || oldProps.translucent !== mergedProps.translucent) {
-              StatusBarManager.setTranslucent(mergedProps.translucent);
-            }
-          }
-          StatusBar._currentValues = mergedProps;
-        });
+      _this._onChange = function (event) {
+        var nativeTimeStamp = event.nativeEvent.timestamp;
+        _this.props.onDateChange && _this.props.onDateChange(new Date(nativeTimeStamp));
+        _this.props.onChange && _this.props.onChange(event);
       };
 
       return _this;
     }
 
-    _createClass(StatusBar, [{
-      key: "componentDidMount",
-      value: function componentDidMount() {
-        this._stackEntry = createStackEntry(this.props);
-
-        StatusBar._propsStack.push(this._stackEntry);
-
-        this._updatePropsStack();
-      }
-    }, {
-      key: "componentWillUnmount",
-      value: function componentWillUnmount() {
-        var index = StatusBar._propsStack.indexOf(this._stackEntry);
-
-        StatusBar._propsStack.splice(index, 1);
-
-        this._updatePropsStack();
-      }
-    }, {
+    _createClass(DatePickerIOS, [{
       key: "componentDidUpdate",
       value: function componentDidUpdate() {
-        var index = StatusBar._propsStack.indexOf(this._stackEntry);
+        if (this.props.date) {
+          var propsTimeStamp = this.props.date.getTime();
 
-        this._stackEntry = createStackEntry(this.props);
-        StatusBar._propsStack[index] = this._stackEntry;
-
-        this._updatePropsStack();
+          if (this._picker) {
+            this._picker.setNativeProps({
+              date: propsTimeStamp
+            });
+          }
+        }
       }
     }, {
       key: "render",
       value: function render() {
-        return null;
-      }
-    }], [{
-      key: "setHidden",
-      value: function setHidden(hidden, animation) {
-        animation = animation || 'none';
-        StatusBar._defaultProps.hidden.value = hidden;
-        {
-          StatusBarManager.setHidden(hidden);
-        }
-      }
-    }, {
-      key: "setBarStyle",
-      value: function setBarStyle(style, animated) {
-        animated = animated || false;
-        StatusBar._defaultProps.barStyle.value = style;
-        {
-          StatusBarManager.setStyle(style);
-        }
-      }
-    }, {
-      key: "setNetworkActivityIndicatorVisible",
-      value: function setNetworkActivityIndicatorVisible(visible) {
-        {
-          console.warn('`setNetworkActivityIndicatorVisible` is only available on iOS');
-          return;
-        }
-        StatusBar._defaultProps.networkActivityIndicatorVisible = visible;
-        StatusBarManager.setNetworkActivityIndicatorVisible(visible);
-      }
-    }, {
-      key: "setBackgroundColor",
-      value: function setBackgroundColor(color, animated) {
-        animated = animated || false;
-        StatusBar._defaultProps.backgroundColor.value = color;
-        StatusBarManager.setColor(processColor(color), animated);
-      }
-    }, {
-      key: "setTranslucent",
-      value: function setTranslucent(translucent) {
-        StatusBar._defaultProps.translucent = translucent;
-        StatusBarManager.setTranslucent(translucent);
+        var _this2 = this;
+
+        var props = this.props;
+        invariant(props.date || props.initialDate, 'A selected date or initial date should be specified.');
+        return React.createElement(View, {
+          style: props.style
+        }, React.createElement(RCTDatePickerIOS, {
+          ref: function ref(picker) {
+            _this2._picker = picker;
+          },
+          style: styles.datePickerIOS,
+          date: props.date ? props.date.getTime() : props.initialDate ? props.initialDate.getTime() : undefined,
+          locale: props.locale ? props.locale : undefined,
+          maximumDate: props.maximumDate ? props.maximumDate.getTime() : undefined,
+          minimumDate: props.minimumDate ? props.minimumDate.getTime() : undefined,
+          mode: props.mode,
+          minuteInterval: props.minuteInterval,
+          timeZoneOffsetInMinutes: props.timeZoneOffsetInMinutes,
+          onChange: this._onChange,
+          onStartShouldSetResponder: function onStartShouldSetResponder() {
+            return true;
+          },
+          onResponderTerminationRequest: function onResponderTerminationRequest() {
+            return false;
+          }
+        }));
       }
     }]);
 
-    return StatusBar;
+    return DatePickerIOS;
   }(React.Component);
 
-  StatusBar._propsStack = [];
-  StatusBar._defaultProps = createStackEntry({
-    animated: false,
-    showHideTransition: 'fade',
-    backgroundColor: 'black',
-    barStyle: 'default',
-    translucent: false,
-    hidden: false,
-    networkActivityIndicatorVisible: false
+  DatePickerIOS.DefaultProps = {
+    mode: 'datetime'
+  };
+  var styles = StyleSheet.create({
+    datePickerIOS: {
+      height: 216
+    }
   });
-  StatusBar._updateImmediate = null;
-  StatusBar._currentValues = null;
-  StatusBar.currentHeight = StatusBarManager.HEIGHT;
-  StatusBar.propTypes = {
-    hidden: PropTypes.bool,
-    animated: PropTypes.bool,
-    backgroundColor: ColorPropType,
-    translucent: PropTypes.bool,
-    barStyle: PropTypes.oneOf(['default', 'light-content', 'dark-content']),
-    networkActivityIndicatorVisible: PropTypes.bool,
-    showHideTransition: PropTypes.oneOf(['fade', 'slide'])
-  };
-  StatusBar.defaultProps = {
-    animated: false,
-    showHideTransition: 'fade'
-  };
-  module.exports = StatusBar;
-},277,[21,22,34,37,40,3,51,65,60,853,74,8]);
+  module.exports = DatePickerIOS;
+},249,[21,22,34,37,40,51,6,54,80,146]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  module.exports = _$$_REQUIRE(_dependencyMap[0]);
+},250,[248]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -31367,7 +30760,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }(React.Component);
 
   module.exports = ImageBackground;
-},251,[3,9,21,22,34,37,40,857,51,54,80,252]);
+},251,[3,9,21,22,34,37,40,238,51,54,80,252]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -31518,6 +30911,97 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
+  var _objectSpread = _$$_REQUIRE(_dependencyMap[0]);
+
+  var React = _$$_REQUIRE(_dependencyMap[1]);
+
+  var EdgeInsetsPropType = _$$_REQUIRE(_dependencyMap[2]);
+
+  var PlatformViewPropTypes = _$$_REQUIRE(_dependencyMap[3]);
+
+  var PropTypes = _$$_REQUIRE(_dependencyMap[4]);
+
+  var StyleSheetPropType = _$$_REQUIRE(_dependencyMap[5]);
+
+  var ViewStylePropTypes = _$$_REQUIRE(_dependencyMap[6]);
+
+  var _require = _$$_REQUIRE(_dependencyMap[7]),
+      AccessibilityComponentTypes = _require.AccessibilityComponentTypes,
+      AccessibilityTraits = _require.AccessibilityTraits,
+      AccessibilityRoles = _require.AccessibilityRoles,
+      AccessibilityStates = _require.AccessibilityStates;
+
+  var stylePropType = StyleSheetPropType(ViewStylePropTypes);
+  module.exports = _objectSpread({
+    accessible: PropTypes.bool,
+    accessibilityLabel: PropTypes.node,
+    accessibilityHint: PropTypes.string,
+    accessibilityActions: PropTypes.arrayOf(PropTypes.string),
+    accessibilityIgnoresInvertColors: PropTypes.bool,
+    accessibilityComponentType: PropTypes.oneOf(AccessibilityComponentTypes),
+    accessibilityRole: PropTypes.oneOf(AccessibilityRoles),
+    accessibilityStates: PropTypes.arrayOf(PropTypes.oneOf(AccessibilityStates)),
+    accessibilityLiveRegion: PropTypes.oneOf(['none', 'polite', 'assertive']),
+    importantForAccessibility: PropTypes.oneOf(['auto', 'yes', 'no', 'no-hide-descendants']),
+    accessibilityTraits: PropTypes.oneOfType([PropTypes.oneOf(AccessibilityTraits), PropTypes.arrayOf(PropTypes.oneOf(AccessibilityTraits))]),
+    accessibilityViewIsModal: PropTypes.bool,
+    accessibilityElementsHidden: PropTypes.bool,
+    onAccessibilityAction: PropTypes.func,
+    onAccessibilityTap: PropTypes.func,
+    onMagicTap: PropTypes.func,
+    testID: PropTypes.string,
+    nativeID: PropTypes.string,
+    onResponderGrant: PropTypes.func,
+    onResponderMove: PropTypes.func,
+    onResponderReject: PropTypes.func,
+    onResponderRelease: PropTypes.func,
+    onResponderTerminate: PropTypes.func,
+    onResponderTerminationRequest: PropTypes.func,
+    onStartShouldSetResponder: PropTypes.func,
+    onStartShouldSetResponderCapture: PropTypes.func,
+    onMoveShouldSetResponder: PropTypes.func,
+    onMoveShouldSetResponderCapture: PropTypes.func,
+    hitSlop: EdgeInsetsPropType,
+    onLayout: PropTypes.func,
+    pointerEvents: PropTypes.oneOf(['box-none', 'none', 'box-only', 'auto']),
+    style: stylePropType,
+    removeClippedSubviews: PropTypes.bool,
+    renderToHardwareTextureAndroid: PropTypes.bool,
+    shouldRasterizeIOS: PropTypes.bool,
+    collapsable: PropTypes.bool,
+    needsOffscreenAlphaCompositing: PropTypes.bool
+  }, PlatformViewPropTypes);
+},256,[48,51,169,257,65,170,73,246]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  var Platform = _$$_REQUIRE(_dependencyMap[0]);
+
+  var TVViewPropTypes = {};
+
+  if (Platform.isTV || false) {
+    TVViewPropTypes = _$$_REQUIRE(_dependencyMap[1]);
+  }
+
+  module.exports = TVViewPropTypes;
+},257,[50,258]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var PropTypes = _$$_REQUIRE(_dependencyMap[0]);
+
+  var TVViewPropTypes = {
+    isTVSelectable: PropTypes.bool,
+    hasTVPreferredFocus: PropTypes.bool,
+    tvParallaxProperties: PropTypes.object,
+    tvParallaxShiftDistanceX: PropTypes.number,
+    tvParallaxShiftDistanceY: PropTypes.number,
+    tvParallaxTiltAngle: PropTypes.number,
+    tvParallaxMagnification: PropTypes.number
+  };
+  module.exports = TVViewPropTypes;
+},258,[65]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
   var _extends = _$$_REQUIRE(_dependencyMap[0]);
 
   var _objectWithoutProperties = _$$_REQUIRE(_dependencyMap[1]);
@@ -31631,7 +31115,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       key: "componentDidMount",
       value: function componentDidMount() {
         {
-          this._subscriptions = [Keyboard.addListener('keyboardDidHide', this._onKeyboardChange), Keyboard.addListener('keyboardDidShow', this._onKeyboardChange)];
+          this._subscriptions = [Keyboard.addListener('keyboardWillChangeFrame', this._onKeyboardChange)];
         }
       }
     }, {
@@ -31710,60 +31194,89 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     keyboardVerticalOffset: 0
   };
   module.exports = KeyboardAvoidingView;
-},259,[3,9,21,22,34,37,40,219,220,853,51,54,80]);
+},259,[3,9,21,22,34,37,40,219,220,50,51,54,80]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
+  var _objectSpread = _$$_REQUIRE(_dependencyMap[0]);
 
-  module.exports = _$$_REQUIRE(_dependencyMap[0]);
-},861,[248]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
+  var _objectWithoutProperties = _$$_REQUIRE(_dependencyMap[1]);
 
-  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[2]);
 
-  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
+  var _createClass = _$$_REQUIRE(_dependencyMap[3]);
 
-  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[4]);
 
-  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[5]);
 
-  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
+  var _inherits = _$$_REQUIRE(_dependencyMap[6]);
 
-  var React = _$$_REQUIRE(_dependencyMap[5]);
+  var PropTypes = _$$_REQUIRE(_dependencyMap[7]);
 
-  var StyleSheet = _$$_REQUIRE(_dependencyMap[6]);
+  var React = _$$_REQUIRE(_dependencyMap[8]);
 
-  var UnimplementedView = function (_React$Component) {
-    _inherits(UnimplementedView, _React$Component);
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[9]);
 
-    function UnimplementedView() {
-      _classCallCheck(this, UnimplementedView);
+  var View = _$$_REQUIRE(_dependencyMap[10]);
 
-      return _possibleConstructorReturn(this, _getPrototypeOf(UnimplementedView).apply(this, arguments));
+  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[11]);
+
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[12]);
+
+  var RCTMaskedView = requireNativeComponent('RCTMaskedView');
+
+  var MaskedViewIOS = function (_React$Component) {
+    "use strict";
+
+    _inherits(MaskedViewIOS, _React$Component);
+
+    function MaskedViewIOS() {
+      var _getPrototypeOf2;
+
+      var _this;
+
+      _classCallCheck(this, MaskedViewIOS);
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(MaskedViewIOS)).call.apply(_getPrototypeOf2, [this].concat(args)));
+      _this._hasWarnedInvalidRenderMask = false;
+      return _this;
     }
 
-    _createClass(UnimplementedView, [{
-      key: "setNativeProps",
-      value: function setNativeProps() {}
-    }, {
+    _createClass(MaskedViewIOS, [{
       key: "render",
       value: function render() {
-        var View = _$$_REQUIRE(_dependencyMap[7]);
+        var _this$props = this.props,
+            maskElement = _this$props.maskElement,
+            children = _this$props.children,
+            otherViewProps = _objectWithoutProperties(_this$props, ["maskElement", "children"]);
 
-        return React.createElement(View, {
-          style: [styles.unimplementedView, this.props.style]
-        }, this.props.children);
+        if (!React.isValidElement(maskElement)) {
+          if (!this._hasWarnedInvalidRenderMask) {
+            console.warn("MaskedView: Invalid `maskElement` prop was passed to MaskedView. Expected a React Element. No mask will render.");
+            this._hasWarnedInvalidRenderMask = true;
+          }
+
+          return React.createElement(View, otherViewProps, children);
+        }
+
+        return React.createElement(RCTMaskedView, otherViewProps, React.createElement(View, {
+          pointerEvents: "none",
+          style: StyleSheet.absoluteFill
+        }, maskElement), children);
       }
     }]);
 
-    return UnimplementedView;
+    return MaskedViewIOS;
   }(React.Component);
 
-  var styles = StyleSheet.create({
-    unimplementedView: {}
+  MaskedViewIOS.propTypes = _objectSpread({}, ViewPropTypes, {
+    maskElement: PropTypes.element.isRequired
   });
-  module.exports = UnimplementedView;
-},248,[21,22,34,37,40,51,54,80]);
+  module.exports = MaskedViewIOS;
+},260,[48,9,21,22,34,37,40,65,51,54,80,256,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -31804,7 +31317,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var requireNativeComponent = _$$_REQUIRE(_dependencyMap[16]);
 
   var RCTModalHostView = requireNativeComponent('RCTModalHostView');
-  var ModalEventEmitter = null;
+  var ModalEventEmitter = NativeModules.ModalManager ? new NativeEventEmitter(NativeModules.ModalManager) : null;
   var uniqueModalIdentifier = 0;
 
   var Modal = function (_React$Component) {
@@ -31834,6 +31347,14 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       key: "componentDidMount",
       value: function componentDidMount() {
         var _this2 = this;
+
+        if (ModalEventEmitter) {
+          this._eventSubscription = ModalEventEmitter.addListener('modalDismissed', function (event) {
+            if (event.modalID === _this2._identifier && _this2.props.onDismiss) {
+              _this2.props.onDismiss();
+            }
+          });
+        }
       }
     }, {
       key: "componentWillUnmount",
@@ -31917,7 +31438,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     transparent: PropTypes.bool,
     hardwareAccelerated: PropTypes.bool,
     visible: PropTypes.bool,
-    onRequestClose: Platform.isTV || true ? PropTypes.func.isRequired : PropTypes.func,
+    onRequestClose: Platform.isTV || false ? PropTypes.func.isRequired : PropTypes.func,
     onShow: PropTypes.func,
     onDismiss: PropTypes.func,
     animated: deprecatedPropType(PropTypes.bool, 'Use the `animationType` prop instead.'),
@@ -31944,7 +31465,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }, _defineProperty(_container, side, 0), _defineProperty(_container, "top", 0), _container)
   });
   module.exports = Modal;
-},261,[49,21,22,34,37,40,262,263,112,8,853,51,65,54,80,70,146]);
+},261,[49,21,22,34,37,40,262,263,112,8,50,51,65,54,80,70,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -32070,8 +31591,488 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  module.exports = _$$_REQUIRE(_dependencyMap[0]);
-},862,[248]);
+  var _extends = _$$_REQUIRE(_dependencyMap[0]);
+
+  var _objectWithoutProperties = _$$_REQUIRE(_dependencyMap[1]);
+
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[2]);
+
+  var _createClass = _$$_REQUIRE(_dependencyMap[3]);
+
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[4]);
+
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[5]);
+
+  var _inherits = _$$_REQUIRE(_dependencyMap[6]);
+
+  var EventEmitter = _$$_REQUIRE(_dependencyMap[7]);
+
+  var Image = _$$_REQUIRE(_dependencyMap[8]);
+
+  var RCTNavigatorManager = _$$_REQUIRE(_dependencyMap[9]).NavigatorManager;
+
+  var React = _$$_REQUIRE(_dependencyMap[10]);
+
+  var PropTypes = _$$_REQUIRE(_dependencyMap[11]);
+
+  var ReactNative = _$$_REQUIRE(_dependencyMap[12]);
+
+  var StaticContainer = _$$_REQUIRE(_dependencyMap[13]);
+
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[14]);
+
+  var TVEventHandler = _$$_REQUIRE(_dependencyMap[15]);
+
+  var View = _$$_REQUIRE(_dependencyMap[16]);
+
+  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[17]);
+
+  var createReactClass = _$$_REQUIRE(_dependencyMap[18]);
+
+  var invariant = _$$_REQUIRE(_dependencyMap[19]);
+
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[20]);
+
+  var keyMirror = _$$_REQUIRE(_dependencyMap[21]);
+
+  var TRANSITIONER_REF = 'transitionerRef';
+  var __uid = 0;
+
+  function getuid() {
+    return __uid++;
+  }
+
+  var NavigatorTransitionerIOS = function (_React$Component) {
+    _inherits(NavigatorTransitionerIOS, _React$Component);
+
+    function NavigatorTransitionerIOS() {
+      _classCallCheck(this, NavigatorTransitionerIOS);
+
+      return _possibleConstructorReturn(this, _getPrototypeOf(NavigatorTransitionerIOS).apply(this, arguments));
+    }
+
+    _createClass(NavigatorTransitionerIOS, [{
+      key: "requestSchedulingNavigation",
+      value: function requestSchedulingNavigation(cb) {
+        RCTNavigatorManager.requestSchedulingJavaScriptNavigation(ReactNative.findNodeHandle(this), cb);
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        return React.createElement(RCTNavigator, this.props);
+      }
+    }]);
+
+    return NavigatorTransitionerIOS;
+  }(React.Component);
+
+  var SystemIconLabels = {
+    done: true,
+    cancel: true,
+    edit: true,
+    save: true,
+    add: true,
+    compose: true,
+    reply: true,
+    action: true,
+    organize: true,
+    bookmarks: true,
+    search: true,
+    refresh: true,
+    stop: true,
+    camera: true,
+    trash: true,
+    play: true,
+    pause: true,
+    rewind: true,
+    'fast-forward': true,
+    undo: true,
+    redo: true,
+    'page-curl': true
+  };
+  var SystemIcons = keyMirror(SystemIconLabels);
+  var NavigatorIOS = createReactClass({
+    displayName: 'NavigatorIOS',
+    propTypes: {
+      initialRoute: PropTypes.shape({
+        component: PropTypes.func.isRequired,
+        title: PropTypes.string.isRequired,
+        titleImage: Image.propTypes.source,
+        passProps: PropTypes.object,
+        backButtonIcon: Image.propTypes.source,
+        backButtonTitle: PropTypes.string,
+        leftButtonIcon: Image.propTypes.source,
+        leftButtonTitle: PropTypes.string,
+        leftButtonSystemIcon: PropTypes.oneOf(Object.keys(SystemIcons)),
+        onLeftButtonPress: PropTypes.func,
+        rightButtonIcon: Image.propTypes.source,
+        rightButtonTitle: PropTypes.string,
+        rightButtonSystemIcon: PropTypes.oneOf(Object.keys(SystemIcons)),
+        onRightButtonPress: PropTypes.func,
+        wrapperStyle: ViewPropTypes.style,
+        navigationBarHidden: PropTypes.bool,
+        shadowHidden: PropTypes.bool,
+        tintColor: PropTypes.string,
+        barTintColor: PropTypes.string,
+        barStyle: PropTypes.oneOf(['default', 'black']),
+        titleTextColor: PropTypes.string,
+        translucent: PropTypes.bool
+      }).isRequired,
+      navigationBarHidden: PropTypes.bool,
+      shadowHidden: PropTypes.bool,
+      itemWrapperStyle: ViewPropTypes.style,
+      tintColor: PropTypes.string,
+      barTintColor: PropTypes.string,
+      barStyle: PropTypes.oneOf(['default', 'black']),
+      titleTextColor: PropTypes.string,
+      translucent: PropTypes.bool,
+      interactivePopGestureEnabled: PropTypes.bool
+    },
+    navigator: undefined,
+    UNSAFE_componentWillMount: function UNSAFE_componentWillMount() {
+      this.navigator = {
+        push: this.push,
+        pop: this.pop,
+        popN: this.popN,
+        replace: this.replace,
+        replaceAtIndex: this.replaceAtIndex,
+        replacePrevious: this.replacePrevious,
+        replacePreviousAndPop: this.replacePreviousAndPop,
+        resetTo: this.resetTo,
+        popToRoute: this.popToRoute,
+        popToTop: this.popToTop
+      };
+    },
+    componentDidMount: function componentDidMount() {
+      this._enableTVEventHandler();
+    },
+    componentWillUnmount: function componentWillUnmount() {
+      this._disableTVEventHandler();
+    },
+    getDefaultProps: function getDefaultProps() {
+      return {
+        translucent: true
+      };
+    },
+    getInitialState: function getInitialState() {
+      return {
+        idStack: [getuid()],
+        routeStack: [this.props.initialRoute],
+        requestedTopOfStack: 0,
+        observedTopOfStack: 0,
+        progress: 1,
+        fromIndex: 0,
+        toIndex: 0,
+        makingNavigatorRequest: false,
+        updatingAllIndicesAtOrBeyond: 0
+      };
+    },
+    _toFocusOnNavigationComplete: undefined,
+    _handleFocusRequest: function _handleFocusRequest(item) {
+      if (this.state.makingNavigatorRequest) {
+        this._toFocusOnNavigationComplete = item;
+      } else {
+        this._getFocusEmitter().emit('focus', item);
+      }
+    },
+    _focusEmitter: undefined,
+    _getFocusEmitter: function _getFocusEmitter() {
+      var focusEmitter = this._focusEmitter;
+
+      if (!focusEmitter) {
+        focusEmitter = new EventEmitter();
+        this._focusEmitter = focusEmitter;
+      }
+
+      return focusEmitter;
+    },
+    getChildContext: function getChildContext() {
+      return {
+        onFocusRequested: this._handleFocusRequest,
+        focusEmitter: this._getFocusEmitter()
+      };
+    },
+    childContextTypes: {
+      onFocusRequested: PropTypes.func,
+      focusEmitter: PropTypes.instanceOf(EventEmitter)
+    },
+    _tryLockNavigator: function _tryLockNavigator(cb) {
+      this.refs[TRANSITIONER_REF].requestSchedulingNavigation(function (acquiredLock) {
+        return acquiredLock && cb();
+      });
+    },
+    _handleNavigatorStackChanged: function _handleNavigatorStackChanged(e) {
+      var newObservedTopOfStack = e.nativeEvent.stackLength - 1;
+      invariant(newObservedTopOfStack <= this.state.requestedTopOfStack, 'No navigator item should be pushed without JS knowing about it %s %s', newObservedTopOfStack, this.state.requestedTopOfStack);
+      var wasWaitingForConfirmation = this.state.requestedTopOfStack !== this.state.observedTopOfStack;
+
+      if (wasWaitingForConfirmation) {
+        invariant(newObservedTopOfStack === this.state.requestedTopOfStack, "If waiting for observedTopOfStack to reach requestedTopOfStack, the only valid observedTopOfStack should be requestedTopOfStack.");
+      }
+
+      var nextState = {
+        observedTopOfStack: newObservedTopOfStack,
+        makingNavigatorRequest: false,
+        updatingAllIndicesAtOrBeyond: null,
+        progress: 1,
+        toIndex: newObservedTopOfStack,
+        fromIndex: newObservedTopOfStack
+      };
+      this.setState(nextState, this._eliminateUnneededChildren);
+    },
+    _eliminateUnneededChildren: function _eliminateUnneededChildren() {
+      var updatingAllIndicesAtOrBeyond = this.state.routeStack.length > this.state.observedTopOfStack + 1 ? this.state.observedTopOfStack + 1 : null;
+      this.setState({
+        idStack: this.state.idStack.slice(0, this.state.observedTopOfStack + 1),
+        routeStack: this.state.routeStack.slice(0, this.state.observedTopOfStack + 1),
+        requestedTopOfStack: this.state.observedTopOfStack,
+        makingNavigatorRequest: true,
+        updatingAllIndicesAtOrBeyond: updatingAllIndicesAtOrBeyond
+      });
+    },
+    push: function push(route) {
+      var _this = this;
+
+      invariant(!!route, 'Must supply route to push');
+
+      if (this.state.requestedTopOfStack === this.state.observedTopOfStack) {
+        this._tryLockNavigator(function () {
+          var nextStack = _this.state.routeStack.concat([route]);
+
+          var nextIDStack = _this.state.idStack.concat([getuid()]);
+
+          _this.setState({
+            idStack: nextIDStack,
+            routeStack: nextStack,
+            requestedTopOfStack: nextStack.length - 1,
+            makingNavigatorRequest: true,
+            updatingAllIndicesAtOrBeyond: nextStack.length - 1
+          });
+        });
+      }
+    },
+    popN: function popN(n) {
+      var _this2 = this;
+
+      if (n === 0) {
+        return;
+      }
+
+      if (this.state.requestedTopOfStack === this.state.observedTopOfStack) {
+        if (this.state.requestedTopOfStack > 0) {
+          this._tryLockNavigator(function () {
+            var newRequestedTopOfStack = _this2.state.requestedTopOfStack - n;
+            invariant(newRequestedTopOfStack >= 0, 'Cannot pop below 0');
+
+            _this2.setState({
+              requestedTopOfStack: newRequestedTopOfStack,
+              makingNavigatorRequest: true,
+              updatingAllIndicesAtOrBeyond: _this2.state.requestedTopOfStack - n
+            });
+          });
+        }
+      }
+    },
+    pop: function pop() {
+      this.popN(1);
+    },
+    replaceAtIndex: function replaceAtIndex(route, index) {
+      invariant(!!route, 'Must supply route to replace');
+
+      if (index < 0) {
+        index += this.state.routeStack.length;
+      }
+
+      if (this.state.routeStack.length <= index) {
+        return;
+      }
+
+      var nextIDStack = this.state.idStack.slice();
+      var nextRouteStack = this.state.routeStack.slice();
+      nextIDStack[index] = getuid();
+      nextRouteStack[index] = route;
+      this.setState({
+        idStack: nextIDStack,
+        routeStack: nextRouteStack,
+        makingNavigatorRequest: false,
+        updatingAllIndicesAtOrBeyond: index
+      });
+    },
+    replace: function replace(route) {
+      this.replaceAtIndex(route, -1);
+    },
+    replacePrevious: function replacePrevious(route) {
+      this.replaceAtIndex(route, -2);
+    },
+    popToTop: function popToTop() {
+      this.popToRoute(this.state.routeStack[0]);
+    },
+    popToRoute: function popToRoute(route) {
+      var indexOfRoute = this.state.routeStack.indexOf(route);
+      invariant(indexOfRoute !== -1, "Calling pop to route for a route that doesn't exist!");
+      var numToPop = this.state.routeStack.length - indexOfRoute - 1;
+      this.popN(numToPop);
+    },
+    replacePreviousAndPop: function replacePreviousAndPop(route) {
+      var _this3 = this;
+
+      if (this.state.requestedTopOfStack !== this.state.observedTopOfStack) {
+        return;
+      }
+
+      if (this.state.routeStack.length < 2) {
+        return;
+      }
+
+      this._tryLockNavigator(function () {
+        _this3.replacePrevious(route);
+
+        _this3.setState({
+          requestedTopOfStack: _this3.state.requestedTopOfStack - 1,
+          makingNavigatorRequest: true
+        });
+      });
+    },
+    resetTo: function resetTo(route) {
+      invariant(!!route, 'Must supply route to push');
+
+      if (this.state.requestedTopOfStack !== this.state.observedTopOfStack) {
+        return;
+      }
+
+      this.replaceAtIndex(route, 0);
+      this.popToRoute(route);
+    },
+    _handleNavigationComplete: function _handleNavigationComplete(e) {
+      e.stopPropagation();
+
+      if (this._toFocusOnNavigationComplete) {
+        this._getFocusEmitter().emit('focus', this._toFocusOnNavigationComplete);
+
+        this._toFocusOnNavigationComplete = null;
+      }
+
+      this._handleNavigatorStackChanged(e);
+    },
+    _routeToStackItem: function _routeToStackItem(routeArg, i) {
+      var component = routeArg.component,
+          wrapperStyle = routeArg.wrapperStyle,
+          passProps = routeArg.passProps,
+          route = _objectWithoutProperties(routeArg, ["component", "wrapperStyle", "passProps"]);
+
+      var _this$props = this.props,
+          itemWrapperStyle = _this$props.itemWrapperStyle,
+          props = _objectWithoutProperties(_this$props, ["itemWrapperStyle"]);
+
+      var shouldUpdateChild = this.state.updatingAllIndicesAtOrBeyond != null && this.state.updatingAllIndicesAtOrBeyond >= i;
+      var Component = component;
+      return React.createElement(StaticContainer, {
+        key: 'nav' + i,
+        shouldUpdate: shouldUpdateChild
+      }, React.createElement(RCTNavigatorItem, _extends({}, props, route, {
+        style: [styles.stackItem, itemWrapperStyle, wrapperStyle]
+      }), React.createElement(Component, _extends({
+        navigator: this.navigator,
+        route: route
+      }, passProps))));
+    },
+    _renderNavigationStackItems: function _renderNavigationStackItems() {
+      var shouldRecurseToNavigator = this.state.makingNavigatorRequest || this.state.updatingAllIndicesAtOrBeyond !== null;
+      var items = shouldRecurseToNavigator ? this.state.routeStack.map(this._routeToStackItem) : null;
+      return React.createElement(StaticContainer, {
+        shouldUpdate: shouldRecurseToNavigator
+      }, React.createElement(NavigatorTransitionerIOS, {
+        ref: TRANSITIONER_REF,
+        style: styles.transitioner,
+        vertical: this.props.vertical,
+        requestedTopOfStack: this.state.requestedTopOfStack,
+        onNavigationComplete: this._handleNavigationComplete,
+        interactivePopGestureEnabled: this.props.interactivePopGestureEnabled
+      }, items));
+    },
+    _tvEventHandler: undefined,
+    _enableTVEventHandler: function _enableTVEventHandler() {
+      this._tvEventHandler = new TVEventHandler();
+
+      this._tvEventHandler.enable(this, function (cmp, evt) {
+        if (evt && evt.eventType === 'menu') {
+          cmp.pop();
+        }
+      });
+    },
+    _disableTVEventHandler: function _disableTVEventHandler() {
+      if (this._tvEventHandler) {
+        this._tvEventHandler.disable();
+
+        delete this._tvEventHandler;
+      }
+    },
+    render: function render() {
+      return React.createElement(View, {
+        style: this.props.style
+      }, this._renderNavigationStackItems());
+    }
+  });
+  var styles = StyleSheet.create({
+    stackItem: {
+      backgroundColor: 'white',
+      overflow: 'hidden',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0
+    },
+    transitioner: {
+      flex: 1
+    }
+  });
+  var RCTNavigator = requireNativeComponent('RCTNavigator');
+  var RCTNavigatorItem = requireNativeComponent('RCTNavItem');
+  module.exports = NavigatorIOS;
+},264,[3,9,21,22,34,37,40,42,238,8,51,65,83,265,54,176,80,256,225,6,146,63]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
+
+  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
+
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
+
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
+
+  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
+
+  var React = _$$_REQUIRE(_dependencyMap[5]);
+
+  var StaticContainer = function (_React$Component) {
+    _inherits(StaticContainer, _React$Component);
+
+    function StaticContainer() {
+      _classCallCheck(this, StaticContainer);
+
+      return _possibleConstructorReturn(this, _getPrototypeOf(StaticContainer).apply(this, arguments));
+    }
+
+    _createClass(StaticContainer, [{
+      key: "shouldComponentUpdate",
+      value: function shouldComponentUpdate(nextProps) {
+        return !!nextProps.shouldUpdate;
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        var child = this.props.children;
+        return child === null || child === false ? null : React.Children.only(child);
+      }
+    }]);
+
+    return StaticContainer;
+  }(React.Component);
+
+  module.exports = StaticContainer;
+},265,[21,22,34,37,40,51]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -32155,7 +32156,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       key: "render",
       value: function render() {
         {
-          return React.createElement(PickerAndroid, this.props, this.props.children);
+          return React.createElement(PickerIOS, this.props, this.props.children);
         }
       }
     }]);
@@ -32180,16 +32181,197 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     testID: PropTypes.string
   });
   module.exports = Picker;
-},266,[21,22,34,37,40,48,60,863,864,853,51,65,170,72,248,256,73]);
+},266,[21,22,34,37,40,48,60,267,268,50,51,65,170,72,248,256,73]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
+
+  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
+
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
+
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
+
+  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
+
+  var React = _$$_REQUIRE(_dependencyMap[5]);
+
+  var ReactNative = _$$_REQUIRE(_dependencyMap[6]);
+
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[7]);
+
+  var View = _$$_REQUIRE(_dependencyMap[8]);
+
+  var processColor = _$$_REQUIRE(_dependencyMap[9]);
+
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[10]);
+
+  var RCTPickerIOS = requireNativeComponent('RCTPicker');
+
+  var PickerIOSItem = function PickerIOSItem(props) {
+    return null;
+  };
+
+  var PickerIOS = function (_React$Component) {
+    _inherits(PickerIOS, _React$Component);
+
+    function PickerIOS() {
+      var _getPrototypeOf2;
+
+      var _this;
+
+      _classCallCheck(this, PickerIOS);
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(PickerIOS)).call.apply(_getPrototypeOf2, [this].concat(args)));
+      _this._picker = null;
+      _this.state = {
+        selectedIndex: 0,
+        items: []
+      };
+
+      _this._onChange = function (event) {
+        if (_this.props.onChange) {
+          _this.props.onChange(event);
+        }
+
+        if (_this.props.onValueChange) {
+          _this.props.onValueChange(event.nativeEvent.newValue, event.nativeEvent.newIndex);
+        }
+
+        if (_this._picker && _this.state.selectedIndex !== event.nativeEvent.newIndex) {
+          _this._picker.setNativeProps({
+            selectedIndex: _this.state.selectedIndex
+          });
+        }
+      };
+
+      return _this;
+    }
+
+    _createClass(PickerIOS, [{
+      key: "render",
+      value: function render() {
+        var _this2 = this;
+
+        return React.createElement(View, {
+          style: this.props.style
+        }, React.createElement(RCTPickerIOS, {
+          ref: function ref(picker) {
+            _this2._picker = picker;
+          },
+          style: [styles.pickerIOS, this.props.itemStyle],
+          items: this.state.items,
+          selectedIndex: this.state.selectedIndex,
+          onChange: this._onChange,
+          onStartShouldSetResponder: function onStartShouldSetResponder() {
+            return true;
+          },
+          onResponderTerminationRequest: function onResponderTerminationRequest() {
+            return false;
+          }
+        }));
+      }
+    }], [{
+      key: "getDerivedStateFromProps",
+      value: function getDerivedStateFromProps(props) {
+        var selectedIndex = 0;
+        var items = [];
+        React.Children.toArray(props.children).forEach(function (child, index) {
+          if (child.props.value === props.selectedValue) {
+            selectedIndex = index;
+          }
+
+          items.push({
+            value: child.props.value,
+            label: child.props.label,
+            textColor: processColor(child.props.color)
+          });
+        });
+        return {
+          selectedIndex: selectedIndex,
+          items: items
+        };
+      }
+    }]);
+
+    return PickerIOS;
+  }(React.Component);
+
+  PickerIOS.Item = PickerIOSItem;
+  var styles = StyleSheet.create({
+    pickerIOS: {
+      height: 216
+    }
+  });
+  module.exports = PickerIOS;
+},267,[21,22,34,37,40,51,83,54,80,74,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
   module.exports = _$$_REQUIRE(_dependencyMap[0]);
-},863,[248]);
+},268,[248]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  module.exports = _$$_REQUIRE(_dependencyMap[0]);
+},269,[248]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
   var _extends = _$$_REQUIRE(_dependencyMap[0]);
+
+  var _objectSpread = _$$_REQUIRE(_dependencyMap[1]);
+
+  var Image = _$$_REQUIRE(_dependencyMap[2]);
+
+  var NativeMethodsMixin = _$$_REQUIRE(_dependencyMap[3]);
+
+  var React = _$$_REQUIRE(_dependencyMap[4]);
+
+  var ReactNative = _$$_REQUIRE(_dependencyMap[5]);
+
+  var PropTypes = _$$_REQUIRE(_dependencyMap[6]);
+
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[7]);
+
+  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[8]);
+
+  var createReactClass = _$$_REQUIRE(_dependencyMap[9]);
+
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[10]);
+
+  var RCTProgressView = requireNativeComponent('RCTProgressView');
+  var ProgressViewIOS = createReactClass({
+    displayName: 'ProgressViewIOS',
+    mixins: [NativeMethodsMixin],
+    propTypes: _objectSpread({}, ViewPropTypes, {
+      progressViewStyle: PropTypes.oneOf(['default', 'bar']),
+      progress: PropTypes.number,
+      progressTintColor: PropTypes.string,
+      trackTintColor: PropTypes.string,
+      progressImage: Image.propTypes.source,
+      trackImage: Image.propTypes.source
+    }),
+    render: function render() {
+      return React.createElement(RCTProgressView, _extends({}, this.props, {
+        style: [styles.progressView, this.props.style]
+      }));
+    }
+  });
+  var styles = StyleSheet.create({
+    progressView: {
+      height: 2
+    }
+  });
+  module.exports = ProgressViewIOS;
+},270,[3,48,238,243,51,83,65,54,256,225,146]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  var _objectSpread = _$$_REQUIRE(_dependencyMap[0]);
 
   var _classCallCheck = _$$_REQUIRE(_dependencyMap[1]);
 
@@ -32201,284 +32383,100 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var _inherits = _$$_REQUIRE(_dependencyMap[5]);
 
-  var _objectSpread = _$$_REQUIRE(_dependencyMap[6]);
+  var React = _$$_REQUIRE(_dependencyMap[6]);
 
-  var ColorPropType = _$$_REQUIRE(_dependencyMap[7]);
+  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[7]);
 
-  var React = _$$_REQUIRE(_dependencyMap[8]);
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[8]);
 
-  var ReactPropTypes = _$$_REQUIRE(_dependencyMap[9]);
+  var RCTSafeAreaView = requireNativeComponent('RCTSafeAreaView');
 
-  var StyleSheet = _$$_REQUIRE(_dependencyMap[10]);
+  var SafeAreaView = function (_React$Component) {
+    "use strict";
 
-  var StyleSheetPropType = _$$_REQUIRE(_dependencyMap[11]);
+    _inherits(SafeAreaView, _React$Component);
 
-  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[12]);
+    function SafeAreaView() {
+      _classCallCheck(this, SafeAreaView);
 
-  var ViewStylePropTypes = _$$_REQUIRE(_dependencyMap[13]);
-
-  var processColor = _$$_REQUIRE(_dependencyMap[14]);
-
-  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[15]);
-
-  var DropdownPicker = requireNativeComponent('AndroidDropdownPicker');
-  var DialogPicker = requireNativeComponent('AndroidDialogPicker');
-  var REF_PICKER = 'picker';
-  var MODE_DROPDOWN = 'dropdown';
-  var pickerStyleType = StyleSheetPropType(_objectSpread({}, ViewStylePropTypes, {
-    color: ColorPropType
-  }));
-
-  var PickerAndroid = function (_React$Component) {
-    _inherits(PickerAndroid, _React$Component);
-
-    function PickerAndroid(_props, context) {
-      var _this;
-
-      _classCallCheck(this, PickerAndroid);
-
-      _this = _possibleConstructorReturn(this, _getPrototypeOf(PickerAndroid).call(this, _props, context));
-
-      _this._stateFromProps = function (props) {
-        var selectedIndex = 0;
-        var items = React.Children.map(props.children, function (child, index) {
-          if (child.props.value === props.selectedValue) {
-            selectedIndex = index;
-          }
-
-          var childProps = {
-            value: child.props.value,
-            label: child.props.label
-          };
-
-          if (child.props.color) {
-            childProps.color = processColor(child.props.color);
-          }
-
-          return childProps;
-        });
-        return {
-          selectedIndex: selectedIndex,
-          items: items
-        };
-      };
-
-      _this._onChange = function (event) {
-        if (_this.props.onValueChange) {
-          var position = event.nativeEvent.position;
-
-          if (position >= 0) {
-            var children = React.Children.toArray(_this.props.children);
-            var value = children[position].props.value;
-
-            _this.props.onValueChange(value, position);
-          } else {
-            _this.props.onValueChange(null, position);
-          }
-        }
-
-        _this._lastNativePosition = event.nativeEvent.position;
-
-        _this.forceUpdate();
-      };
-
-      var state = _this._stateFromProps(_props);
-
-      _this.state = _objectSpread({}, state, {
-        initialSelectedIndex: state.selectedIndex
-      });
-      return _this;
+      return _possibleConstructorReturn(this, _getPrototypeOf(SafeAreaView).apply(this, arguments));
     }
 
-    _createClass(PickerAndroid, [{
-      key: "UNSAFE_componentWillReceiveProps",
-      value: function UNSAFE_componentWillReceiveProps(nextProps) {
-        this.setState(this._stateFromProps(nextProps));
-      }
-    }, {
+    _createClass(SafeAreaView, [{
       key: "render",
       value: function render() {
-        var Picker = this.props.mode === MODE_DROPDOWN ? DropdownPicker : DialogPicker;
-        var nativeProps = {
-          enabled: this.props.enabled,
-          items: this.state.items,
-          mode: this.props.mode,
-          onSelect: this._onChange,
-          prompt: this.props.prompt,
-          selected: this.state.initialSelectedIndex,
-          testID: this.props.testID,
-          style: [styles.pickerAndroid, this.props.style],
-          accessibilityLabel: this.props.accessibilityLabel
-        };
-        return React.createElement(Picker, _extends({
-          ref: REF_PICKER
-        }, nativeProps));
-      }
-    }, {
-      key: "componentDidMount",
-      value: function componentDidMount() {
-        this._lastNativePosition = this.state.initialSelectedIndex;
-      }
-    }, {
-      key: "componentDidUpdate",
-      value: function componentDidUpdate() {
-        if (this.refs[REF_PICKER] && this.state.selectedIndex !== this._lastNativePosition) {
-          this.refs[REF_PICKER].setNativeProps({
-            selected: this.state.selectedIndex
-          });
-          this._lastNativePosition = this.state.selectedIndex;
-        }
+        return React.createElement(RCTSafeAreaView, this.props);
       }
     }]);
 
-    return PickerAndroid;
+    return SafeAreaView;
   }(React.Component);
 
-  PickerAndroid.propTypes = _objectSpread({}, ViewPropTypes, {
-    style: pickerStyleType,
-    selectedValue: ReactPropTypes.any,
-    enabled: ReactPropTypes.bool,
-    mode: ReactPropTypes.oneOf(['dialog', 'dropdown']),
-    onValueChange: ReactPropTypes.func,
-    prompt: ReactPropTypes.string,
-    testID: ReactPropTypes.string
-  });
-  var styles = StyleSheet.create({
-    pickerAndroid: {
-      height: 50
-    }
-  });
-  module.exports = PickerAndroid;
-},864,[3,21,22,34,37,40,48,60,51,65,54,170,256,73,74,146]);
+  SafeAreaView.propTypes = _objectSpread({}, ViewPropTypes);
+  module.exports = SafeAreaView;
+},271,[48,21,22,34,37,40,51,256,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
+  var _extends = _$$_REQUIRE(_dependencyMap[0]);
 
-  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
+  var _objectSpread = _$$_REQUIRE(_dependencyMap[1]);
 
-  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
+  var NativeMethodsMixin = _$$_REQUIRE(_dependencyMap[2]);
 
-  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
+  var React = _$$_REQUIRE(_dependencyMap[3]);
 
-  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
+  var ReactNative = _$$_REQUIRE(_dependencyMap[4]);
 
-  var React = _$$_REQUIRE(_dependencyMap[5]);
+  var PropTypes = _$$_REQUIRE(_dependencyMap[5]);
 
   var StyleSheet = _$$_REQUIRE(_dependencyMap[6]);
 
-  var Text = _$$_REQUIRE(_dependencyMap[7]);
+  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[7]);
 
-  var View = _$$_REQUIRE(_dependencyMap[8]);
+  var createReactClass = _$$_REQUIRE(_dependencyMap[8]);
 
-  var DummyProgressViewIOS = function (_React$Component) {
-    _inherits(DummyProgressViewIOS, _React$Component);
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[9]);
 
-    function DummyProgressViewIOS() {
-      _classCallCheck(this, DummyProgressViewIOS);
-
-      return _possibleConstructorReturn(this, _getPrototypeOf(DummyProgressViewIOS).apply(this, arguments));
-    }
-
-    _createClass(DummyProgressViewIOS, [{
-      key: "render",
-      value: function render() {
-        return React.createElement(View, {
-          style: [styles.dummy, this.props.style]
-        }, React.createElement(Text, {
-          style: styles.text
-        }, "ProgressViewIOS is not supported on this platform!"));
-      }
-    }]);
-
-    return DummyProgressViewIOS;
-  }(React.Component);
-
-  var styles = StyleSheet.create({
-    dummy: {
-      width: 120,
-      height: 20,
-      backgroundColor: '#ffbcbc',
-      borderWidth: 1,
-      borderColor: 'red',
-      alignItems: 'center',
-      justifyContent: 'center'
+  var RCTSegmentedControl = requireNativeComponent('RCTSegmentedControl');
+  var SEGMENTED_CONTROL_REFERENCE = 'segmentedcontrol';
+  var SegmentedControlIOS = createReactClass({
+    displayName: 'SegmentedControlIOS',
+    mixins: [NativeMethodsMixin],
+    propTypes: _objectSpread({}, ViewPropTypes, {
+      values: PropTypes.arrayOf(PropTypes.string),
+      selectedIndex: PropTypes.number,
+      onValueChange: PropTypes.func,
+      onChange: PropTypes.func,
+      enabled: PropTypes.bool,
+      tintColor: PropTypes.string,
+      momentary: PropTypes.bool
+    }),
+    getDefaultProps: function getDefaultProps() {
+      return {
+        values: [],
+        enabled: true
+      };
     },
-    text: {
-      color: '#333333',
-      margin: 5,
-      fontSize: 10
+    _onChange: function _onChange(event) {
+      this.props.onChange && this.props.onChange(event);
+      this.props.onValueChange && this.props.onValueChange(event.nativeEvent.value);
+    },
+    render: function render() {
+      return React.createElement(RCTSegmentedControl, _extends({}, this.props, {
+        ref: SEGMENTED_CONTROL_REFERENCE,
+        style: [styles.segmentedControl, this.props.style],
+        onChange: this._onChange
+      }));
     }
   });
-  module.exports = DummyProgressViewIOS;
-},865,[21,22,34,37,40,51,54,167,80]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  module.exports = _$$_REQUIRE(_dependencyMap[0]);
-},866,[80]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
-
-  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
-
-  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
-
-  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
-
-  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
-
-  var React = _$$_REQUIRE(_dependencyMap[5]);
-
-  var StyleSheet = _$$_REQUIRE(_dependencyMap[6]);
-
-  var Text = _$$_REQUIRE(_dependencyMap[7]);
-
-  var View = _$$_REQUIRE(_dependencyMap[8]);
-
-  var DummySegmentedControlIOS = function (_React$Component) {
-    _inherits(DummySegmentedControlIOS, _React$Component);
-
-    function DummySegmentedControlIOS() {
-      _classCallCheck(this, DummySegmentedControlIOS);
-
-      return _possibleConstructorReturn(this, _getPrototypeOf(DummySegmentedControlIOS).apply(this, arguments));
-    }
-
-    _createClass(DummySegmentedControlIOS, [{
-      key: "render",
-      value: function render() {
-        return React.createElement(View, {
-          style: [styles.dummy, this.props.style]
-        }, React.createElement(Text, {
-          style: styles.text
-        }, "SegmentedControlIOS is not supported on this platform!"));
-      }
-    }]);
-
-    return DummySegmentedControlIOS;
-  }(React.Component);
-
   var styles = StyleSheet.create({
-    dummy: {
-      width: 120,
-      height: 50,
-      backgroundColor: '#ffbcbc',
-      borderWidth: 1,
-      borderColor: 'red',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    text: {
-      color: '#333333',
-      margin: 5,
-      fontSize: 10
+    segmentedControl: {
+      height: 28
     }
   });
-  module.exports = DummySegmentedControlIOS;
-},867,[21,22,34,37,40,51,54,167,80]);
+  module.exports = SegmentedControlIOS;
+},272,[3,48,243,51,83,65,54,256,225,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -32501,9 +32499,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
     var onValueChange = props.onValueChange && function (event) {
       var userEvent = true;
-      {
-        userEvent = event.nativeEvent.fromUser;
-      }
       props.onValueChange && userEvent && props.onValueChange(event.nativeEvent.value);
     };
 
@@ -32540,16 +32535,100 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var styles;
   {
     styles = StyleSheet.create({
-      slider: {}
+      slider: {
+        height: 40
+      }
     });
   }
   module.exports = SliderWithRef;
-},273,[3,83,853,51,54,146]);
+},273,[3,83,50,51,54,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  module.exports = _$$_REQUIRE(_dependencyMap[0]);
-},868,[248]);
+  var _objectSpread = _$$_REQUIRE(_dependencyMap[0]);
+
+  var _extends = _$$_REQUIRE(_dependencyMap[1]);
+
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[2]);
+
+  var _createClass = _$$_REQUIRE(_dependencyMap[3]);
+
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[4]);
+
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[5]);
+
+  var _inherits = _$$_REQUIRE(_dependencyMap[6]);
+
+  var React = _$$_REQUIRE(_dependencyMap[7]);
+
+  var PropTypes = _$$_REQUIRE(_dependencyMap[8]);
+
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[9]);
+
+  var _require = _$$_REQUIRE(_dependencyMap[10]),
+      TestModule = _require.TestModule;
+
+  var UIManager = _$$_REQUIRE(_dependencyMap[11]);
+
+  var View = _$$_REQUIRE(_dependencyMap[12]);
+
+  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[13]);
+
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[14]);
+
+  var RCTSnapshot = UIManager.RCTSnapshot ? requireNativeComponent('RCTSnapshot') : View;
+
+  var SnapshotViewIOS = function (_React$Component) {
+    _inherits(SnapshotViewIOS, _React$Component);
+
+    function SnapshotViewIOS() {
+      var _getPrototypeOf2;
+
+      var _this;
+
+      _classCallCheck(this, SnapshotViewIOS);
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(SnapshotViewIOS)).call.apply(_getPrototypeOf2, [this].concat(args)));
+
+      _this.onDefaultAction = function (event) {
+        TestModule.verifySnapshot(TestModule.markTestPassed);
+      };
+
+      return _this;
+    }
+
+    _createClass(SnapshotViewIOS, [{
+      key: "render",
+      value: function render() {
+        var testIdentifier = this.props.testIdentifier || 'test';
+        var onSnapshotReady = this.props.onSnapshotReady || this.onDefaultAction;
+        return React.createElement(RCTSnapshot, _extends({
+          style: style.snapshot
+        }, this.props, {
+          onSnapshotReady: onSnapshotReady,
+          testIdentifier: testIdentifier
+        }));
+      }
+    }]);
+
+    return SnapshotViewIOS;
+  }(React.Component);
+
+  SnapshotViewIOS.propTypes = _objectSpread({}, ViewPropTypes, {
+    onSnapshotReady: PropTypes.func,
+    testIdentifier: PropTypes.string
+  });
+  var style = StyleSheet.create({
+    snapshot: {
+      flex: 1
+    }
+  });
+  module.exports = SnapshotViewIOS;
+},274,[48,3,21,22,34,37,40,51,65,54,8,71,80,256,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -32599,7 +32678,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         var value = _this.props.value === true;
         {
           _this._nativeSwitchRef.setNativeProps({
-            on: value
+            value: value
           });
         }
 
@@ -32657,11 +32736,18 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         }
 
         var platformProps = {
-          enabled: disabled !== true,
-          on: value === true,
-          style: style,
+          disabled: disabled,
+          onTintColor: _trackColorForTrue,
+          style: StyleSheet.compose({
+            height: 31,
+            width: 51
+          }, StyleSheet.compose(style, ios_backgroundColor == null ? null : {
+            backgroundColor: ios_backgroundColor,
+            borderRadius: 16
+          })),
           thumbTintColor: _thumbColor,
-          trackTintColor: value === true ? _trackColorForTrue : _trackColorForFalse
+          tintColor: _trackColorForFalse,
+          value: value === true
         };
         return React.createElement(SwitchNativeComponent, _extends({}, props, platformProps, {
           onChange: this._handleChange,
@@ -32684,7 +32770,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   };
 
   module.exports = Switch;
-},275,[3,9,21,22,34,37,40,276,853,51,54]);
+},275,[3,9,21,22,34,37,40,276,50,51,54]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -32694,9 +32780,221 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var requireNativeComponent = _$$_REQUIRE(_dependencyMap[2]);
 
-  var SwitchNativeComponent = requireNativeComponent('AndroidSwitch');
+  var SwitchNativeComponent = requireNativeComponent('RCTSwitch');
   module.exports = SwitchNativeComponent;
-},276,[853,83,146]);
+},276,[50,83,146]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
+
+  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
+
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
+
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
+
+  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
+
+  var _extends = _$$_REQUIRE(_dependencyMap[5]);
+
+  var React = _$$_REQUIRE(_dependencyMap[6]);
+
+  var PropTypes = _$$_REQUIRE(_dependencyMap[7]);
+
+  var ColorPropType = _$$_REQUIRE(_dependencyMap[8]);
+
+  var Platform = _$$_REQUIRE(_dependencyMap[9]);
+
+  var processColor = _$$_REQUIRE(_dependencyMap[10]);
+
+  var StatusBarManager = _$$_REQUIRE(_dependencyMap[11]).StatusBarManager;
+
+  function mergePropsStack(propsStack, defaultValues) {
+    return propsStack.reduce(function (prev, cur) {
+      for (var prop in cur) {
+        if (cur[prop] != null) {
+          prev[prop] = cur[prop];
+        }
+      }
+
+      return prev;
+    }, _extends({}, defaultValues));
+  }
+
+  function createStackEntry(props) {
+    return {
+      backgroundColor: props.backgroundColor != null ? {
+        value: props.backgroundColor,
+        animated: props.animated
+      } : null,
+      barStyle: props.barStyle != null ? {
+        value: props.barStyle,
+        animated: props.animated
+      } : null,
+      translucent: props.translucent,
+      hidden: props.hidden != null ? {
+        value: props.hidden,
+        animated: props.animated,
+        transition: props.showHideTransition
+      } : null,
+      networkActivityIndicatorVisible: props.networkActivityIndicatorVisible
+    };
+  }
+
+  var StatusBar = function (_React$Component) {
+    _inherits(StatusBar, _React$Component);
+
+    function StatusBar() {
+      var _getPrototypeOf2;
+
+      var _this;
+
+      _classCallCheck(this, StatusBar);
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(StatusBar)).call.apply(_getPrototypeOf2, [this].concat(args)));
+      _this._stackEntry = null;
+
+      _this._updatePropsStack = function () {
+        clearImmediate(StatusBar._updateImmediate);
+        StatusBar._updateImmediate = setImmediate(function () {
+          var oldProps = StatusBar._currentValues;
+          var mergedProps = mergePropsStack(StatusBar._propsStack, StatusBar._defaultProps);
+          {
+            if (!oldProps || oldProps.barStyle.value !== mergedProps.barStyle.value) {
+              StatusBarManager.setStyle(mergedProps.barStyle.value, mergedProps.barStyle.animated);
+            }
+
+            if (!oldProps || oldProps.hidden.value !== mergedProps.hidden.value) {
+              StatusBarManager.setHidden(mergedProps.hidden.value, mergedProps.hidden.animated ? mergedProps.hidden.transition : 'none');
+            }
+
+            if (!oldProps || oldProps.networkActivityIndicatorVisible !== mergedProps.networkActivityIndicatorVisible) {
+              StatusBarManager.setNetworkActivityIndicatorVisible(mergedProps.networkActivityIndicatorVisible);
+            }
+          }
+          StatusBar._currentValues = mergedProps;
+        });
+      };
+
+      return _this;
+    }
+
+    _createClass(StatusBar, [{
+      key: "componentDidMount",
+      value: function componentDidMount() {
+        this._stackEntry = createStackEntry(this.props);
+
+        StatusBar._propsStack.push(this._stackEntry);
+
+        this._updatePropsStack();
+      }
+    }, {
+      key: "componentWillUnmount",
+      value: function componentWillUnmount() {
+        var index = StatusBar._propsStack.indexOf(this._stackEntry);
+
+        StatusBar._propsStack.splice(index, 1);
+
+        this._updatePropsStack();
+      }
+    }, {
+      key: "componentDidUpdate",
+      value: function componentDidUpdate() {
+        var index = StatusBar._propsStack.indexOf(this._stackEntry);
+
+        this._stackEntry = createStackEntry(this.props);
+        StatusBar._propsStack[index] = this._stackEntry;
+
+        this._updatePropsStack();
+      }
+    }, {
+      key: "render",
+      value: function render() {
+        return null;
+      }
+    }], [{
+      key: "setHidden",
+      value: function setHidden(hidden, animation) {
+        animation = animation || 'none';
+        StatusBar._defaultProps.hidden.value = hidden;
+        {
+          StatusBarManager.setHidden(hidden, animation);
+        }
+      }
+    }, {
+      key: "setBarStyle",
+      value: function setBarStyle(style, animated) {
+        animated = animated || false;
+        StatusBar._defaultProps.barStyle.value = style;
+        {
+          StatusBarManager.setStyle(style, animated);
+        }
+      }
+    }, {
+      key: "setNetworkActivityIndicatorVisible",
+      value: function setNetworkActivityIndicatorVisible(visible) {
+        StatusBar._defaultProps.networkActivityIndicatorVisible = visible;
+        StatusBarManager.setNetworkActivityIndicatorVisible(visible);
+      }
+    }, {
+      key: "setBackgroundColor",
+      value: function setBackgroundColor(color, animated) {
+        {
+          console.warn('`setBackgroundColor` is only available on Android');
+          return;
+        }
+        animated = animated || false;
+        StatusBar._defaultProps.backgroundColor.value = color;
+        StatusBarManager.setColor(processColor(color), animated);
+      }
+    }, {
+      key: "setTranslucent",
+      value: function setTranslucent(translucent) {
+        {
+          console.warn('`setTranslucent` is only available on Android');
+          return;
+        }
+        StatusBar._defaultProps.translucent = translucent;
+        StatusBarManager.setTranslucent(translucent);
+      }
+    }]);
+
+    return StatusBar;
+  }(React.Component);
+
+  StatusBar._propsStack = [];
+  StatusBar._defaultProps = createStackEntry({
+    animated: false,
+    showHideTransition: 'fade',
+    backgroundColor: 'black',
+    barStyle: 'default',
+    translucent: false,
+    hidden: false,
+    networkActivityIndicatorVisible: false
+  });
+  StatusBar._updateImmediate = null;
+  StatusBar._currentValues = null;
+  StatusBar.currentHeight = StatusBarManager.HEIGHT;
+  StatusBar.propTypes = {
+    hidden: PropTypes.bool,
+    animated: PropTypes.bool,
+    backgroundColor: ColorPropType,
+    translucent: PropTypes.bool,
+    barStyle: PropTypes.oneOf(['default', 'light-content', 'dark-content']),
+    networkActivityIndicatorVisible: PropTypes.bool,
+    showHideTransition: PropTypes.oneOf(['fade', 'slide'])
+  };
+  StatusBar.defaultProps = {
+    animated: false,
+    showHideTransition: 'fade'
+  };
+  module.exports = StatusBar;
+},277,[21,22,34,37,40,3,51,65,60,50,74,8]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -33631,109 +33929,206 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
+  var _objectSpread = _$$_REQUIRE(_dependencyMap[0]);
 
-  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[1]);
 
-  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
+  var _createClass = _$$_REQUIRE(_dependencyMap[2]);
 
-  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[3]);
 
-  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[4]);
 
-  var React = _$$_REQUIRE(_dependencyMap[5]);
+  var _inherits = _$$_REQUIRE(_dependencyMap[5]);
 
-  var StyleSheet = _$$_REQUIRE(_dependencyMap[6]);
+  var ColorPropType = _$$_REQUIRE(_dependencyMap[6]);
 
-  var TabBarItemIOS = _$$_REQUIRE(_dependencyMap[7]);
+  var React = _$$_REQUIRE(_dependencyMap[7]);
 
-  var View = _$$_REQUIRE(_dependencyMap[8]);
+  var PropTypes = _$$_REQUIRE(_dependencyMap[8]);
 
-  var DummyTabBarIOS = function (_React$Component) {
-    _inherits(DummyTabBarIOS, _React$Component);
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[9]);
 
-    function DummyTabBarIOS() {
-      _classCallCheck(this, DummyTabBarIOS);
+  var TabBarItemIOS = _$$_REQUIRE(_dependencyMap[10]);
 
-      return _possibleConstructorReturn(this, _getPrototypeOf(DummyTabBarIOS).apply(this, arguments));
+  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[11]);
+
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[12]);
+
+  var RCTTabBar = requireNativeComponent('RCTTabBar');
+
+  var TabBarIOS = function (_React$Component) {
+    _inherits(TabBarIOS, _React$Component);
+
+    function TabBarIOS() {
+      _classCallCheck(this, TabBarIOS);
+
+      return _possibleConstructorReturn(this, _getPrototypeOf(TabBarIOS).apply(this, arguments));
     }
 
-    _createClass(DummyTabBarIOS, [{
+    _createClass(TabBarIOS, [{
       key: "render",
       value: function render() {
-        return React.createElement(View, {
-          style: [this.props.style, styles.tabGroup]
+        return React.createElement(RCTTabBar, {
+          style: [styles.tabGroup, this.props.style],
+          unselectedTintColor: this.props.unselectedTintColor,
+          unselectedItemTintColor: this.props.unselectedItemTintColor,
+          tintColor: this.props.tintColor,
+          barTintColor: this.props.barTintColor,
+          barStyle: this.props.barStyle,
+          itemPositioning: this.props.itemPositioning,
+          translucent: this.props.translucent !== false
         }, this.props.children);
       }
     }]);
 
-    return DummyTabBarIOS;
+    return TabBarIOS;
   }(React.Component);
 
-  DummyTabBarIOS.Item = TabBarItemIOS;
+  TabBarIOS.Item = TabBarItemIOS;
+  TabBarIOS.propTypes = _objectSpread({}, ViewPropTypes, {
+    style: ViewPropTypes.style,
+    unselectedTintColor: ColorPropType,
+    tintColor: ColorPropType,
+    unselectedItemTintColor: ColorPropType,
+    barTintColor: ColorPropType,
+    barStyle: PropTypes.oneOf(['default', 'black']),
+    translucent: PropTypes.bool,
+    itemPositioning: PropTypes.oneOf(['fill', 'center', 'auto'])
+  });
   var styles = StyleSheet.create({
     tabGroup: {
       flex: 1
     }
   });
-  module.exports = DummyTabBarIOS;
-},869,[21,22,34,37,40,51,54,870,80]);
+  module.exports = TabBarIOS;
+},284,[48,21,22,34,37,40,60,51,65,54,285,256,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
+  var _objectSpread = _$$_REQUIRE(_dependencyMap[0]);
 
-  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
+  var _extends = _$$_REQUIRE(_dependencyMap[1]);
 
-  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
+  var _objectWithoutProperties = _$$_REQUIRE(_dependencyMap[2]);
 
-  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[3]);
 
-  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
+  var _createClass = _$$_REQUIRE(_dependencyMap[4]);
 
-  var React = _$$_REQUIRE(_dependencyMap[5]);
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[5]);
 
-  var View = _$$_REQUIRE(_dependencyMap[6]);
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[6]);
 
-  var StyleSheet = _$$_REQUIRE(_dependencyMap[7]);
+  var _inherits = _$$_REQUIRE(_dependencyMap[7]);
 
-  var DummyTab = function (_React$Component) {
-    _inherits(DummyTab, _React$Component);
+  var ColorPropType = _$$_REQUIRE(_dependencyMap[8]);
 
-    function DummyTab() {
-      _classCallCheck(this, DummyTab);
+  var Image = _$$_REQUIRE(_dependencyMap[9]);
 
-      return _possibleConstructorReturn(this, _getPrototypeOf(DummyTab).apply(this, arguments));
+  var React = _$$_REQUIRE(_dependencyMap[10]);
+
+  var PropTypes = _$$_REQUIRE(_dependencyMap[11]);
+
+  var StaticContainer = _$$_REQUIRE(_dependencyMap[12]);
+
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[13]);
+
+  var View = _$$_REQUIRE(_dependencyMap[14]);
+
+  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[15]);
+
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[16]);
+
+  var TabBarItemIOS = function (_React$Component) {
+    _inherits(TabBarItemIOS, _React$Component);
+
+    function TabBarItemIOS() {
+      var _getPrototypeOf2;
+
+      var _this;
+
+      _classCallCheck(this, TabBarItemIOS);
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(TabBarItemIOS)).call.apply(_getPrototypeOf2, [this].concat(args)));
+      _this.state = {
+        hasBeenSelected: false
+      };
+      return _this;
     }
 
-    _createClass(DummyTab, [{
+    _createClass(TabBarItemIOS, [{
+      key: "UNSAFE_componentWillMount",
+      value: function UNSAFE_componentWillMount() {
+        if (this.props.selected) {
+          this.setState({
+            hasBeenSelected: true
+          });
+        }
+      }
+    }, {
+      key: "UNSAFE_componentWillReceiveProps",
+      value: function UNSAFE_componentWillReceiveProps(nextProps) {
+        if (this.state.hasBeenSelected || nextProps.selected) {
+          this.setState({
+            hasBeenSelected: true
+          });
+        }
+      }
+    }, {
       key: "render",
       value: function render() {
-        if (!this.props.selected) {
-          return React.createElement(View, null);
+        var _this$props = this.props,
+            style = _this$props.style,
+            children = _this$props.children,
+            props = _objectWithoutProperties(_this$props, ["style", "children"]);
+
+        if (this.state.hasBeenSelected) {
+          var tabContents = React.createElement(StaticContainer, {
+            shouldUpdate: this.props.selected
+          }, children);
+        } else {
+          var tabContents = React.createElement(View, null);
         }
 
-        return React.createElement(View, {
-          style: [this.props.style, styles.tab]
-        }, this.props.children);
+        return React.createElement(RCTTabBarItem, _extends({}, props, {
+          style: [styles.tab, style]
+        }), tabContents);
       }
     }]);
 
-    return DummyTab;
+    return TabBarItemIOS;
   }(React.Component);
 
+  TabBarItemIOS.propTypes = _objectSpread({}, ViewPropTypes, {
+    badge: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    badgeColor: ColorPropType,
+    systemIcon: PropTypes.oneOf(['bookmarks', 'contacts', 'downloads', 'favorites', 'featured', 'history', 'more', 'most-recent', 'most-viewed', 'recents', 'search', 'top-rated']),
+    icon: Image.propTypes.source,
+    selectedIcon: Image.propTypes.source,
+    onPress: PropTypes.func,
+    renderAsOriginal: PropTypes.bool,
+    selected: PropTypes.bool,
+    style: ViewPropTypes.style,
+    title: PropTypes.string,
+    isTVSelectable: PropTypes.bool
+  });
   var styles = StyleSheet.create({
     tab: {
+      position: 'absolute',
       top: 0,
       right: 0,
       bottom: 0,
-      left: 0,
-      borderColor: 'red',
-      borderWidth: 1
+      left: 0
     }
   });
-  module.exports = DummyTab;
-},870,[21,22,34,37,40,51,80,54]);
+  var RCTTabBarItem = requireNativeComponent('RCTTabBarItem');
+  module.exports = TabBarItemIOS;
+},285,[48,3,9,21,22,34,37,40,60,238,51,65,265,54,80,256,146]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -33797,7 +34192,8 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var RCTMultilineTextInputView;
   var RCTSinglelineTextInputView;
   {
-    AndroidTextInput = requireNativeComponent('AndroidTextInput');
+    RCTMultilineTextInputView = requireNativeComponent('RCTMultilineTextInputView');
+    RCTSinglelineTextInputView = requireNativeComponent('RCTSinglelineTextInputView');
   }
   var onlyMultiline = {
     onTextInput: true,
@@ -33935,7 +34331,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     render: function render() {
       var textInput;
       {
-        textInput = this._renderAndroid();
+        textInput = UIManager.RCTVirtualText ? this._renderIOS() : this._renderIOSLegacy();
       }
       return React.createElement(TextAncestor.Provider, {
         value: true
@@ -34226,7 +34622,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
   });
   module.exports = TypedTextInput;
-},286,[21,22,34,37,40,3,48,60,287,42,243,853,51,225,65,83,54,167,81,145,230,244,71,256,46,6,146,104]);
+},286,[21,22,34,37,40,3,48,60,287,42,243,50,51,225,65,83,54,167,81,145,230,244,71,256,46,6,146,104]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -34615,130 +35011,20 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var RCTToastAndroid = _$$_REQUIRE(_dependencyMap[0]).ToastAndroid;
+  var warning = _$$_REQUIRE(_dependencyMap[0]);
 
   var ToastAndroid = {
-    SHORT: RCTToastAndroid.SHORT,
-    LONG: RCTToastAndroid.LONG,
-    TOP: RCTToastAndroid.TOP,
-    BOTTOM: RCTToastAndroid.BOTTOM,
-    CENTER: RCTToastAndroid.CENTER,
     show: function show(message, duration) {
-      RCTToastAndroid.show(message, duration);
-    },
-    showWithGravity: function showWithGravity(message, duration, gravity) {
-      RCTToastAndroid.showWithGravity(message, duration, gravity);
-    },
-    showWithGravityAndOffset: function showWithGravityAndOffset(message, duration, gravity, xOffset, yOffset) {
-      RCTToastAndroid.showWithGravityAndOffset(message, duration, gravity, xOffset, yOffset);
+      warning(false, 'ToastAndroid is not supported on this platform.');
     }
   };
   module.exports = ToastAndroid;
-},871,[8]);
+},292,[104]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var _extends = _$$_REQUIRE(_dependencyMap[0]);
-
-  var _objectSpread = _$$_REQUIRE(_dependencyMap[1]);
-
-  var Image = _$$_REQUIRE(_dependencyMap[2]);
-
-  var NativeMethodsMixin = _$$_REQUIRE(_dependencyMap[3]);
-
-  var React = _$$_REQUIRE(_dependencyMap[4]);
-
-  var PropTypes = _$$_REQUIRE(_dependencyMap[5]);
-
-  var UIManager = _$$_REQUIRE(_dependencyMap[6]);
-
-  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[7]);
-
-  var ColorPropType = _$$_REQUIRE(_dependencyMap[8]);
-
-  var createReactClass = _$$_REQUIRE(_dependencyMap[9]);
-
-  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[10]);
-
-  var resolveAssetSource = _$$_REQUIRE(_dependencyMap[11]);
-
-  var optionalImageSource = PropTypes.oneOfType([Image.propTypes.source, PropTypes.oneOf([])]);
-  var ToolbarAndroid = createReactClass({
-    displayName: 'ToolbarAndroid',
-    mixins: [NativeMethodsMixin],
-    propTypes: _objectSpread({}, ViewPropTypes, {
-      actions: PropTypes.arrayOf(PropTypes.shape({
-        title: PropTypes.string.isRequired,
-        icon: optionalImageSource,
-        show: PropTypes.oneOf(['always', 'ifRoom', 'never']),
-        showWithText: PropTypes.bool
-      })),
-      logo: optionalImageSource,
-      navIcon: optionalImageSource,
-      onActionSelected: PropTypes.func,
-      onIconClicked: PropTypes.func,
-      overflowIcon: optionalImageSource,
-      subtitle: PropTypes.string,
-      subtitleColor: ColorPropType,
-      title: PropTypes.string,
-      titleColor: ColorPropType,
-      contentInsetStart: PropTypes.number,
-      contentInsetEnd: PropTypes.number,
-      rtl: PropTypes.bool,
-      testID: PropTypes.string
-    }),
-    render: function render() {
-      var nativeProps = _objectSpread({}, this.props);
-
-      if (this.props.logo) {
-        nativeProps.logo = resolveAssetSource(this.props.logo);
-      }
-
-      if (this.props.navIcon) {
-        nativeProps.navIcon = resolveAssetSource(this.props.navIcon);
-      }
-
-      if (this.props.overflowIcon) {
-        nativeProps.overflowIcon = resolveAssetSource(this.props.overflowIcon);
-      }
-
-      if (this.props.actions) {
-        var nativeActions = [];
-
-        for (var i = 0; i < this.props.actions.length; i++) {
-          var action = _objectSpread({}, this.props.actions[i]);
-
-          if (action.icon) {
-            action.icon = resolveAssetSource(action.icon);
-          }
-
-          if (action.show) {
-            action.show = UIManager.ToolbarAndroid.Constants.ShowAsAction[action.show];
-          }
-
-          nativeActions.push(action);
-        }
-
-        nativeProps.nativeActions = nativeActions;
-      }
-
-      return React.createElement(NativeToolbar, _extends({
-        onSelect: this._onSelect
-      }, nativeProps));
-    },
-    _onSelect: function _onSelect(event) {
-      var position = event.nativeEvent.position;
-
-      if (position === -1) {
-        this.props.onIconClicked && this.props.onIconClicked();
-      } else {
-        this.props.onActionSelected && this.props.onActionSelected(position);
-      }
-    }
-  });
-  var NativeToolbar = requireNativeComponent('ToolbarAndroid');
-  module.exports = ToolbarAndroid;
-},872,[3,48,857,243,51,65,71,256,60,225,146,152]);
+  module.exports = _$$_REQUIRE(_dependencyMap[0]);
+},293,[248]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -34940,159 +35226,12 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
   });
   module.exports = TouchableHighlight;
-},294,[48,60,243,65,853,51,162,54,172,244,80,256,225,245]);
+},294,[48,60,243,65,50,51,162,54,172,244,80,256,225,245]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var _extends = _$$_REQUIRE(_dependencyMap[0]);
-
-  var _objectSpread = _$$_REQUIRE(_dependencyMap[1]);
-
-  var _classCallCheck = _$$_REQUIRE(_dependencyMap[2]);
-
-  var _createClass = _$$_REQUIRE(_dependencyMap[3]);
-
-  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[4]);
-
-  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[5]);
-
-  var _inherits = _$$_REQUIRE(_dependencyMap[6]);
-
-  var _assertThisInitialized = _$$_REQUIRE(_dependencyMap[7]);
-
-  var React = _$$_REQUIRE(_dependencyMap[8]);
-
-  var PropTypes = _$$_REQUIRE(_dependencyMap[9]);
-
-  var ReactNative = _$$_REQUIRE(_dependencyMap[10]);
-
-  var UIManager = _$$_REQUIRE(_dependencyMap[11]);
-
-  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[12]);
-
-  var dismissKeyboard = _$$_REQUIRE(_dependencyMap[13]);
-
-  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[14]);
-
-  var NativeAndroidViewPager = requireNativeComponent('AndroidViewPager');
-  var VIEWPAGER_REF = 'viewPager';
-
-  var ViewPagerAndroid = function (_React$Component) {
-    _inherits(ViewPagerAndroid, _React$Component);
-
-    function ViewPagerAndroid() {
-      var _getPrototypeOf2;
-
-      var _this;
-
-      _classCallCheck(this, ViewPagerAndroid);
-
-      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-      }
-
-      _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(ViewPagerAndroid)).call.apply(_getPrototypeOf2, [this].concat(args)));
-
-      _this.getInnerViewNode = function () {
-        return _this.refs[VIEWPAGER_REF].getInnerViewNode();
-      };
-
-      _this._childrenWithOverridenStyle = function () {
-        return React.Children.map(_this.props.children, function (child) {
-          if (!child) {
-            return null;
-          }
-
-          var newProps = _objectSpread({}, child.props, {
-            style: [child.props.style, {
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              right: 0,
-              bottom: 0,
-              width: undefined,
-              height: undefined
-            }],
-            collapsable: false
-          });
-
-          if (child.type && child.type.displayName && child.type.displayName !== 'RCTView' && child.type.displayName !== 'View') {
-            console.warn('Each ViewPager child must be a <View>. Was ' + child.type.displayName);
-          }
-
-          return React.createElement(child.type, newProps);
-        });
-      };
-
-      _this._onPageScroll = function (e) {
-        if (_this.props.onPageScroll) {
-          _this.props.onPageScroll(e);
-        }
-
-        if (_this.props.keyboardDismissMode === 'on-drag') {
-          dismissKeyboard();
-        }
-      };
-
-      _this._onPageScrollStateChanged = function (e) {
-        if (_this.props.onPageScrollStateChanged) {
-          _this.props.onPageScrollStateChanged(e.nativeEvent.pageScrollState);
-        }
-      };
-
-      _this._onPageSelected = function (e) {
-        if (_this.props.onPageSelected) {
-          _this.props.onPageSelected(e);
-        }
-      };
-
-      _this.setPage = function (selectedPage) {
-        UIManager.dispatchViewManagerCommand(ReactNative.findNodeHandle(_assertThisInitialized(_assertThisInitialized(_this))), UIManager.AndroidViewPager.Commands.setPage, [selectedPage]);
-      };
-
-      _this.setPageWithoutAnimation = function (selectedPage) {
-        UIManager.dispatchViewManagerCommand(ReactNative.findNodeHandle(_assertThisInitialized(_assertThisInitialized(_this))), UIManager.AndroidViewPager.Commands.setPageWithoutAnimation, [selectedPage]);
-      };
-
-      return _this;
-    }
-
-    _createClass(ViewPagerAndroid, [{
-      key: "componentDidMount",
-      value: function componentDidMount() {
-        if (this.props.initialPage != null) {
-          this.setPageWithoutAnimation(this.props.initialPage);
-        }
-      }
-    }, {
-      key: "render",
-      value: function render() {
-        return React.createElement(NativeAndroidViewPager, _extends({}, this.props, {
-          ref: VIEWPAGER_REF,
-          style: this.props.style,
-          onPageScroll: this._onPageScroll,
-          onPageScrollStateChanged: this._onPageScrollStateChanged,
-          onPageSelected: this._onPageSelected,
-          children: this._childrenWithOverridenStyle()
-        }));
-      }
-    }]);
-
-    return ViewPagerAndroid;
-  }(React.Component);
-
-  ViewPagerAndroid.propTypes = _objectSpread({}, ViewPropTypes, {
-    initialPage: PropTypes.number,
-    onPageScroll: PropTypes.func,
-    onPageScrollStateChanged: PropTypes.func,
-    onPageSelected: PropTypes.func,
-    pageMargin: PropTypes.number,
-    keyboardDismissMode: PropTypes.oneOf(['none', 'on-drag']),
-    scrollEnabled: PropTypes.bool,
-    peekEnabled: PropTypes.bool
-  });
-  module.exports = ViewPagerAndroid;
-},873,[3,48,21,22,34,37,40,36,51,65,83,71,256,221,146]);
+  module.exports = _$$_REQUIRE(_dependencyMap[0]);
+},295,[248]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -35100,57 +35239,96 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var _extends = _$$_REQUIRE(_dependencyMap[1]);
 
-  var _classCallCheck = _$$_REQUIRE(_dependencyMap[2]);
+  var _toConsumableArray = _$$_REQUIRE(_dependencyMap[2]);
 
-  var _createClass = _$$_REQUIRE(_dependencyMap[3]);
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[3]);
 
-  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[4]);
+  var _createClass = _$$_REQUIRE(_dependencyMap[4]);
 
-  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[5]);
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[5]);
 
-  var _inherits = _$$_REQUIRE(_dependencyMap[6]);
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[6]);
 
-  var EdgeInsetsPropType = _$$_REQUIRE(_dependencyMap[7]);
+  var _inherits = _$$_REQUIRE(_dependencyMap[7]);
 
   var ActivityIndicator = _$$_REQUIRE(_dependencyMap[8]);
 
-  var React = _$$_REQUIRE(_dependencyMap[9]);
+  var EdgeInsetsPropType = _$$_REQUIRE(_dependencyMap[9]);
 
-  var PropTypes = _$$_REQUIRE(_dependencyMap[10]);
+  var Linking = _$$_REQUIRE(_dependencyMap[10]);
 
-  var ReactNative = _$$_REQUIRE(_dependencyMap[11]);
+  var PropTypes = _$$_REQUIRE(_dependencyMap[11]);
 
-  var StyleSheet = _$$_REQUIRE(_dependencyMap[12]);
+  var React = _$$_REQUIRE(_dependencyMap[12]);
 
-  var UIManager = _$$_REQUIRE(_dependencyMap[13]);
+  var ReactNative = _$$_REQUIRE(_dependencyMap[13]);
 
-  var View = _$$_REQUIRE(_dependencyMap[14]);
+  var ScrollView = _$$_REQUIRE(_dependencyMap[14]);
 
-  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[15]);
+  var StyleSheet = _$$_REQUIRE(_dependencyMap[15]);
 
-  var WebViewShared = _$$_REQUIRE(_dependencyMap[16]);
+  var Text = _$$_REQUIRE(_dependencyMap[16]);
 
-  var deprecatedPropType = _$$_REQUIRE(_dependencyMap[17]);
+  var UIManager = _$$_REQUIRE(_dependencyMap[17]);
 
-  var keyMirror = _$$_REQUIRE(_dependencyMap[18]);
+  var View = _$$_REQUIRE(_dependencyMap[18]);
 
-  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[19]);
+  var ViewPropTypes = _$$_REQUIRE(_dependencyMap[19]);
 
-  var resolveAssetSource = _$$_REQUIRE(_dependencyMap[20]);
+  var WebViewShared = _$$_REQUIRE(_dependencyMap[20]);
 
+  var deprecatedPropType = _$$_REQUIRE(_dependencyMap[21]);
+
+  var invariant = _$$_REQUIRE(_dependencyMap[22]);
+
+  var keyMirror = _$$_REQUIRE(_dependencyMap[23]);
+
+  var processDecelerationRate = _$$_REQUIRE(_dependencyMap[24]);
+
+  var requireNativeComponent = _$$_REQUIRE(_dependencyMap[25]);
+
+  var resolveAssetSource = _$$_REQUIRE(_dependencyMap[26]);
+
+  var RCTWebViewManager = _$$_REQUIRE(_dependencyMap[27]).WebViewManager;
+
+  var RCTWKWebViewManager = _$$_REQUIRE(_dependencyMap[27]).WKWebViewManager;
+
+  var BGWASH = 'rgba(255,255,255,0.8)';
   var RCT_WEBVIEW_REF = 'webview';
   var WebViewState = keyMirror({
     IDLE: null,
     LOADING: null,
     ERROR: null
   });
+  var NavigationType = keyMirror({
+    click: true,
+    formsubmit: true,
+    backforward: true,
+    reload: true,
+    formresubmit: true,
+    other: true
+  });
+  var JSNavigationScheme = 'react-js-navigation';
+  var DataDetectorTypes = ['phoneNumber', 'link', 'address', 'calendarEvent', 'trackingNumber', 'flightNumber', 'lookupSuggestion', 'none', 'all'];
 
   var defaultRenderLoading = function defaultRenderLoading() {
     return React.createElement(View, {
       style: styles.loadingView
-    }, React.createElement(ActivityIndicator, {
-      style: styles.loadingProgressBar
-    }));
+    }, React.createElement(ActivityIndicator, null));
+  };
+
+  var defaultRenderError = function defaultRenderError(errorDomain, errorCode, errorDesc) {
+    return React.createElement(View, {
+      style: styles.errorContainer
+    }, React.createElement(Text, {
+      style: styles.errorTextTitle
+    }, "Error loading page"), React.createElement(Text, {
+      style: styles.errorText
+    }, 'Domain: ' + errorDomain), React.createElement(Text, {
+      style: styles.errorText
+    }, 'Error Code: ' + errorCode), React.createElement(Text, {
+      style: styles.errorText
+    }, 'Description: ' + errorDesc));
   };
 
   var WebView = function (_React$Component) {
@@ -35175,11 +35353,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       };
 
       _this.goForward = function () {
-        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), UIManager.RCTWebView.Commands.goForward, null);
+        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), _this._getCommands().goForward, null);
       };
 
       _this.goBack = function () {
-        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), UIManager.RCTWebView.Commands.goBack, null);
+        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), _this._getCommands().goBack, null);
       };
 
       _this.reload = function () {
@@ -35187,22 +35365,22 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           viewState: WebViewState.LOADING
         });
 
-        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), UIManager.RCTWebView.Commands.reload, null);
+        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), _this._getCommands().reload, null);
       };
 
       _this.stopLoading = function () {
-        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), UIManager.RCTWebView.Commands.stopLoading, null);
+        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), _this._getCommands().stopLoading, null);
       };
 
       _this.postMessage = function (data) {
-        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), UIManager.RCTWebView.Commands.postMessage, [String(data)]);
+        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), _this._getCommands().postMessage, [String(data)]);
       };
 
       _this.injectJavaScript = function (data) {
-        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), UIManager.RCTWebView.Commands.injectJavaScript, [data]);
+        UIManager.dispatchViewManagerCommand(_this.getWebViewHandle(), _this._getCommands().injectJavaScript, [data]);
       };
 
-      _this.updateNavigationState = function (event) {
+      _this._updateNavigationState = function (event) {
         if (_this.props.onNavigationStateChange) {
           _this.props.onNavigationStateChange(event.nativeEvent);
         }
@@ -35212,14 +35390,14 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         return ReactNative.findNodeHandle(_this.refs[RCT_WEBVIEW_REF]);
       };
 
-      _this.onLoadingStart = function (event) {
+      _this._onLoadingStart = function (event) {
         var onLoadStart = _this.props.onLoadStart;
         onLoadStart && onLoadStart(event);
 
-        _this.updateNavigationState(event);
+        _this._updateNavigationState(event);
       };
 
-      _this.onLoadingError = function (event) {
+      _this._onLoadingError = function (event) {
         event.persist();
         var _this$props = _this.props,
             onError = _this$props.onError,
@@ -35234,7 +35412,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         });
       };
 
-      _this.onLoadingFinish = function (event) {
+      _this._onLoadingFinish = function (event) {
         var _this$props2 = _this.props,
             onLoad = _this$props2.onLoad,
             onLoadEnd = _this$props2.onLoadEnd;
@@ -35245,10 +35423,10 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           viewState: WebViewState.IDLE
         });
 
-        _this.updateNavigationState(event);
+        _this._updateNavigationState(event);
       };
 
-      _this.onMessage = function (event) {
+      _this._onMessage = function (event) {
         var onMessage = _this.props.onMessage;
         onMessage && onMessage(event);
       };
@@ -35264,27 +35442,74 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             viewState: WebViewState.LOADING
           });
         }
+
+        if (this.props.useWebKit === true && this.props.scalesPageToFit !== undefined) {
+          console.warn('The scalesPageToFit property is not supported when useWebKit = true');
+        }
       }
     }, {
       key: "render",
       value: function render() {
+        var _this2 = this;
+
         var otherView = null;
+        var scalesPageToFit;
+
+        if (this.props.useWebKit) {
+          scalesPageToFit = this.props.scalesPageToFit;
+        } else {
+          var _this$props$scalesPag = this.props.scalesPageToFit;
+          scalesPageToFit = _this$props$scalesPag === undefined ? true : _this$props$scalesPag;
+        }
 
         if (this.state.viewState === WebViewState.LOADING) {
           otherView = (this.props.renderLoading || defaultRenderLoading)();
         } else if (this.state.viewState === WebViewState.ERROR) {
           var errorEvent = this.state.lastErrorEvent;
-          otherView = this.props.renderError && this.props.renderError(errorEvent.domain, errorEvent.code, errorEvent.description);
+          invariant(errorEvent != null, 'lastErrorEvent expected to be non-null');
+          otherView = (this.props.renderError || defaultRenderError)(errorEvent.domain, errorEvent.code, errorEvent.description);
         } else if (this.state.viewState !== WebViewState.IDLE) {
           console.error('RCTWebView invalid state encountered: ' + this.state.loading);
         }
 
-        var webViewStyles = [styles.container, this.props.style];
+        var webViewStyles = [styles.container, styles.webView, this.props.style];
 
         if (this.state.viewState === WebViewState.LOADING || this.state.viewState === WebViewState.ERROR) {
           webViewStyles.push(styles.hidden);
         }
 
+        var nativeConfig = this.props.nativeConfig || {};
+        var viewManager = nativeConfig.viewManager;
+
+        if (this.props.useWebKit) {
+          viewManager = viewManager || RCTWKWebViewManager;
+        } else {
+          viewManager = viewManager || RCTWebViewManager;
+        }
+
+        var compiledWhitelist = ['about:blank'].concat(_toConsumableArray(this.props.originWhitelist || [])).map(WebViewShared.originWhitelistToRegex);
+
+        var onShouldStartLoadWithRequest = function onShouldStartLoadWithRequest(event) {
+          var shouldStart = true;
+          var url = event.nativeEvent.url;
+          var origin = WebViewShared.extractOrigin(url);
+          var passesWhitelist = compiledWhitelist.some(function (x) {
+            return new RegExp(x).test(origin);
+          });
+          shouldStart = shouldStart && passesWhitelist;
+
+          if (!passesWhitelist) {
+            Linking.openURL(url);
+          }
+
+          if (_this2.props.onShouldStartLoadWithRequest) {
+            shouldStart = shouldStart && _this2.props.onShouldStartLoadWithRequest(event.nativeEvent);
+          }
+
+          viewManager.startLoadWithResult(!!shouldStart, event.nativeEvent.lockIdentifier);
+        };
+
+        var decelerationRate = processDecelerationRate(this.props.decelerationRate);
         var source = this.props.source || {};
 
         if (this.props.html) {
@@ -35293,72 +35518,87 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           source.uri = this.props.url;
         }
 
-        if (source.method === 'POST' && source.headers) {
-          console.warn('WebView: `source.headers` is not supported when using POST.');
-        } else if (source.method === 'GET' && source.body) {
-          console.warn('WebView: `source.body` is not supported when using GET.');
+        var messagingEnabled = typeof this.props.onMessage === 'function';
+        var NativeWebView = nativeConfig.component;
+
+        if (this.props.useWebKit) {
+          NativeWebView = NativeWebView || RCTWKWebView;
+        } else {
+          NativeWebView = NativeWebView || RCTWebView;
         }
 
-        var nativeConfig = this.props.nativeConfig || {};
-        var originWhitelist = (this.props.originWhitelist || []).map(WebViewShared.originWhitelistToRegex);
-        var NativeWebView = nativeConfig.component || RCTWebView;
         var webView = React.createElement(NativeWebView, _extends({
           ref: RCT_WEBVIEW_REF,
           key: "webViewKey",
           style: webViewStyles,
           source: resolveAssetSource(source),
-          scalesPageToFit: this.props.scalesPageToFit,
-          allowFileAccess: this.props.allowFileAccess,
           injectedJavaScript: this.props.injectedJavaScript,
-          userAgent: this.props.userAgent,
-          javaScriptEnabled: this.props.javaScriptEnabled,
-          thirdPartyCookiesEnabled: this.props.thirdPartyCookiesEnabled,
-          domStorageEnabled: this.props.domStorageEnabled,
-          messagingEnabled: typeof this.props.onMessage === 'function',
-          onMessage: this.onMessage,
+          bounces: this.props.bounces,
+          scrollEnabled: this.props.scrollEnabled,
+          decelerationRate: decelerationRate,
           contentInset: this.props.contentInset,
           automaticallyAdjustContentInsets: this.props.automaticallyAdjustContentInsets,
-          onContentSizeChange: this.props.onContentSizeChange,
-          onLoadingStart: this.onLoadingStart,
-          onLoadingFinish: this.onLoadingFinish,
-          onLoadingError: this.onLoadingError,
-          testID: this.props.testID,
-          geolocationEnabled: this.props.geolocationEnabled,
+          onLoadingStart: this._onLoadingStart,
+          onLoadingFinish: this._onLoadingFinish,
+          onLoadingError: this._onLoadingError,
+          messagingEnabled: messagingEnabled,
+          onMessage: this._onMessage,
+          onShouldStartLoadWithRequest: onShouldStartLoadWithRequest,
+          scalesPageToFit: scalesPageToFit,
+          allowsInlineMediaPlayback: this.props.allowsInlineMediaPlayback,
           mediaPlaybackRequiresUserAction: this.props.mediaPlaybackRequiresUserAction,
-          allowUniversalAccessFromFileURLs: this.props.allowUniversalAccessFromFileURLs,
-          originWhitelist: originWhitelist,
-          mixedContentMode: this.props.mixedContentMode,
-          saveFormDataDisabled: this.props.saveFormDataDisabled,
-          urlPrefixesForDefaultIntent: this.props.urlPrefixesForDefaultIntent
+          dataDetectorTypes: this.props.dataDetectorTypes
         }, nativeConfig.props));
         return React.createElement(View, {
           style: styles.container
         }, webView, otherView);
+      }
+    }, {
+      key: "_getCommands",
+      value: function _getCommands() {
+        if (!this.props.useWebKit) {
+          return UIManager.RCTWebView.Commands;
+        }
+
+        return UIManager.RCTWKWebView.Commands;
+      }
+    }, {
+      key: "componentDidUpdate",
+      value: function componentDidUpdate(prevProps) {
+        if (!(prevProps.useWebKit && this.props.useWebKit)) {
+          return;
+        }
+
+        this._showRedboxOnPropChanges(prevProps, 'allowsInlineMediaPlayback');
+
+        this._showRedboxOnPropChanges(prevProps, 'mediaPlaybackRequiresUserAction');
+
+        this._showRedboxOnPropChanges(prevProps, 'dataDetectorTypes');
+
+        if (this.props.scalesPageToFit !== undefined) {
+          console.warn('The scalesPageToFit property is not supported when useWebKit = true');
+        }
+      }
+    }, {
+      key: "_showRedboxOnPropChanges",
+      value: function _showRedboxOnPropChanges(prevProps, propName) {
+        if (this.props[propName] !== prevProps[propName]) {
+          console.error("Changes to property " + propName + " do nothing after the initial render.");
+        }
       }
     }]);
 
     return WebView;
   }(React.Component);
 
+  WebView.JSNavigationScheme = JSNavigationScheme;
+  WebView.NavigationType = NavigationType;
   WebView.propTypes = _objectSpread({}, ViewPropTypes, {
-    renderError: PropTypes.func,
-    renderLoading: PropTypes.func,
-    onLoad: PropTypes.func,
-    onLoadEnd: PropTypes.func,
-    onLoadStart: PropTypes.func,
-    onError: PropTypes.func,
-    automaticallyAdjustContentInsets: PropTypes.bool,
-    contentInset: EdgeInsetsPropType,
-    onNavigationStateChange: PropTypes.func,
-    onMessage: PropTypes.func,
-    onContentSizeChange: PropTypes.func,
-    startInLoadingState: PropTypes.bool,
-    style: ViewPropTypes.style,
     html: deprecatedPropType(PropTypes.string, 'Use the `source` prop instead.'),
     url: deprecatedPropType(PropTypes.string, 'Use the `source` prop instead.'),
     source: PropTypes.oneOfType([PropTypes.shape({
       uri: PropTypes.string,
-      method: PropTypes.oneOf(['GET', 'POST']),
+      method: PropTypes.string,
       headers: PropTypes.object,
       body: PropTypes.string
     }), PropTypes.shape({
@@ -35366,55 +35606,156 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       baseUrl: PropTypes.string
     }), PropTypes.number]),
     useWebKit: PropTypes.bool,
+    renderError: PropTypes.func,
+    renderLoading: PropTypes.func,
+    onLoad: PropTypes.func,
+    onLoadEnd: PropTypes.func,
+    onLoadStart: PropTypes.func,
+    onError: PropTypes.func,
+    bounces: PropTypes.bool,
+    decelerationRate: PropTypes.oneOfType([PropTypes.oneOf(['fast', 'normal']), PropTypes.number]),
+    scrollEnabled: PropTypes.bool,
+    automaticallyAdjustContentInsets: PropTypes.bool,
+    contentInset: EdgeInsetsPropType,
+    onNavigationStateChange: PropTypes.func,
+    onMessage: PropTypes.func,
+    startInLoadingState: PropTypes.bool,
+    style: ViewPropTypes.style,
+    dataDetectorTypes: PropTypes.oneOfType([PropTypes.oneOf(DataDetectorTypes), PropTypes.arrayOf(PropTypes.oneOf(DataDetectorTypes))]),
     javaScriptEnabled: PropTypes.bool,
     thirdPartyCookiesEnabled: PropTypes.bool,
     domStorageEnabled: PropTypes.bool,
-    geolocationEnabled: PropTypes.bool,
     injectedJavaScript: PropTypes.string,
-    scalesPageToFit: PropTypes.bool,
-    allowFileAccess: PropTypes.bool,
     userAgent: PropTypes.string,
-    testID: PropTypes.string,
+    scalesPageToFit: PropTypes.bool,
+    onShouldStartLoadWithRequest: PropTypes.func,
+    allowsInlineMediaPlayback: PropTypes.bool,
     mediaPlaybackRequiresUserAction: PropTypes.bool,
-    allowUniversalAccessFromFileURLs: PropTypes.bool,
     originWhitelist: PropTypes.arrayOf(PropTypes.string),
     injectJavaScript: PropTypes.func,
     mixedContentMode: PropTypes.oneOf(['never', 'always', 'compatibility']),
-    saveFormDataDisabled: PropTypes.bool,
     nativeConfig: PropTypes.shape({
       component: PropTypes.any,
       props: PropTypes.object,
       viewManager: PropTypes.object
-    }),
-    urlPrefixesForDefaultIntent: PropTypes.arrayOf(PropTypes.string)
+    })
   });
   WebView.defaultProps = {
-    javaScriptEnabled: true,
-    thirdPartyCookiesEnabled: true,
-    scalesPageToFit: true,
-    saveFormDataDisabled: false,
     originWhitelist: WebViewShared.defaultOriginWhitelist
   };
-  var RCTWebView = requireNativeComponent('RCTWebView');
+  var RCTWebView = requireNativeComponent('RCTWebView', WebView, WebView.extraNativeComponentConfig);
+  var RCTWKWebView = requireNativeComponent('RCTWKWebView', WebView, WebView.extraNativeComponentConfig);
   var styles = StyleSheet.create({
     container: {
       flex: 1
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: BGWASH
+    },
+    errorText: {
+      fontSize: 14,
+      textAlign: 'center',
+      marginBottom: 2
+    },
+    errorTextTitle: {
+      fontSize: 15,
+      fontWeight: '500',
+      marginBottom: 10
     },
     hidden: {
       height: 0,
       flex: 0
     },
     loadingView: {
+      backgroundColor: BGWASH,
       flex: 1,
       justifyContent: 'center',
-      alignItems: 'center'
+      alignItems: 'center',
+      height: 100
     },
-    loadingProgressBar: {
-      height: 20
+    webView: {
+      backgroundColor: '#ffffff'
     }
   });
   module.exports = WebView;
-},874,[48,3,21,22,34,37,40,169,47,51,65,83,54,71,80,256,298,70,63,146,152]);
+},296,[48,3,17,21,22,34,37,40,47,169,297,65,51,83,216,54,167,71,80,256,298,70,6,63,228,146,152,8]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  'use strict';
+
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
+
+  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
+
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
+
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
+
+  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
+
+  var NativeEventEmitter = _$$_REQUIRE(_dependencyMap[5]);
+
+  var NativeModules = _$$_REQUIRE(_dependencyMap[6]);
+
+  var Platform = _$$_REQUIRE(_dependencyMap[7]);
+
+  var invariant = _$$_REQUIRE(_dependencyMap[8]);
+
+  var LinkingManager = NativeModules.LinkingManager;
+
+  var Linking = function (_NativeEventEmitter) {
+    _inherits(Linking, _NativeEventEmitter);
+
+    function Linking() {
+      _classCallCheck(this, Linking);
+
+      return _possibleConstructorReturn(this, _getPrototypeOf(Linking).call(this, LinkingManager));
+    }
+
+    _createClass(Linking, [{
+      key: "addEventListener",
+      value: function addEventListener(type, handler) {
+        this.addListener(type, handler);
+      }
+    }, {
+      key: "removeEventListener",
+      value: function removeEventListener(type, handler) {
+        this.removeListener(type, handler);
+      }
+    }, {
+      key: "openURL",
+      value: function openURL(url) {
+        this._validateURL(url);
+
+        return LinkingManager.openURL(url);
+      }
+    }, {
+      key: "canOpenURL",
+      value: function canOpenURL(url) {
+        this._validateURL(url);
+
+        return LinkingManager.canOpenURL(url);
+      }
+    }, {
+      key: "getInitialURL",
+      value: function getInitialURL() {
+        return LinkingManager.getInitialURL();
+      }
+    }, {
+      key: "_validateURL",
+      value: function _validateURL(url) {
+        invariant(typeof url === 'string', 'Invalid URL: should be a string. Was: ' + url);
+        invariant(url, 'Invalid URL: cannot be empty');
+      }
+    }]);
+
+    return Linking;
+  }(NativeEventEmitter);
+
+  module.exports = new Linking();
+},297,[21,22,34,37,40,112,8,50,6]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -35828,7 +36169,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }
 
   module.exports = renderApplication;
-},305,[3,262,51,306,6,875,308,83]);
+},305,[3,262,51,306,6,307,308,83]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -35868,48 +36209,66 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var DeviceEventManager = _$$_REQUIRE(_dependencyMap[0]).DeviceEventManager;
+  var Platform = _$$_REQUIRE(_dependencyMap[0]);
 
-  var RCTDeviceEventEmitter = _$$_REQUIRE(_dependencyMap[1]);
+  var TVEventHandler = _$$_REQUIRE(_dependencyMap[1]);
 
-  var DEVICE_BACK_EVENT = 'hardwareBackPress';
+  function emptyFunction() {}
 
-  var _backPressSubscriptions = new Set();
+  var BackHandler;
 
-  RCTDeviceEventEmitter.addListener(DEVICE_BACK_EVENT, function () {
-    var invokeDefault = true;
-    var subscriptions = Array.from(_backPressSubscriptions.values()).reverse();
+  if (Platform.isTV) {
+    var _tvEventHandler = new TVEventHandler();
 
-    for (var i = 0; i < subscriptions.length; ++i) {
-      if (subscriptions[i]()) {
-        invokeDefault = false;
-        break;
-      }
-    }
+    var _backPressSubscriptions = new Set();
 
-    if (invokeDefault) {
-      BackHandler.exitApp();
-    }
-  });
-  var BackHandler = {
-    exitApp: function exitApp() {
-      DeviceEventManager.invokeDefaultBackPressHandler();
-    },
-    addEventListener: function addEventListener(eventName, handler) {
-      _backPressSubscriptions.add(handler);
+    _tvEventHandler.enable(this, function (cmp, evt) {
+      if (evt && evt.eventType === 'menu') {
+        var invokeDefault = true;
+        var subscriptions = Array.from(_backPressSubscriptions.values()).reverse();
 
-      return {
-        remove: function remove() {
-          return BackHandler.removeEventListener(eventName, handler);
+        for (var i = 0; i < subscriptions.length; ++i) {
+          if (subscriptions[i]()) {
+            invokeDefault = false;
+            break;
+          }
         }
-      };
-    },
-    removeEventListener: function removeEventListener(eventName, handler) {
-      _backPressSubscriptions.delete(handler);
-    }
-  };
+
+        if (invokeDefault) {
+          BackHandler.exitApp();
+        }
+      }
+    });
+
+    BackHandler = {
+      exitApp: emptyFunction,
+      addEventListener: function addEventListener(eventName, handler) {
+        _backPressSubscriptions.add(handler);
+
+        return {
+          remove: function remove() {
+            return BackHandler.removeEventListener(eventName, handler);
+          }
+        };
+      },
+      removeEventListener: function removeEventListener(eventName, handler) {
+        _backPressSubscriptions.delete(handler);
+      }
+    };
+  } else {
+    BackHandler = {
+      exitApp: emptyFunction,
+      addEventListener: function addEventListener() {
+        return {
+          remove: emptyFunction
+        };
+      },
+      removeEventListener: emptyFunction
+    };
+  }
+
   module.exports = BackHandler;
-},875,[8,33]);
+},307,[50,176]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -40033,7 +40392,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
   };
   module.exports = BackAndroid;
-},313,[875,104]);
+},313,[307,104]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -40175,69 +40534,26 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var _regeneratorRuntime = _$$_REQUIRE(_dependencyMap[0]);
 
-  var _classCallCheck = _$$_REQUIRE(_dependencyMap[1]);
+  var DatePickerAndroid = {
+    open: function open(options) {
+      return _regeneratorRuntime.async(function open$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              return _context.abrupt("return", Promise.reject({
+                message: 'DatePickerAndroid is not supported on this platform.'
+              }));
 
-  var _createClass = _$$_REQUIRE(_dependencyMap[2]);
-
-  var DatePickerModule = _$$_REQUIRE(_dependencyMap[3]).DatePickerAndroid;
-
-  function _toMillis(options, key) {
-    var dateVal = options[key];
-
-    if (typeof dateVal === 'object' && typeof dateVal.getMonth === 'function') {
-      options[key] = dateVal.getTime();
-    }
-  }
-
-  var DatePickerAndroid = function () {
-    function DatePickerAndroid() {
-      _classCallCheck(this, DatePickerAndroid);
-    }
-
-    _createClass(DatePickerAndroid, null, [{
-      key: "open",
-      value: function open(options) {
-        var optionsMs;
-        return _regeneratorRuntime.async(function open$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                optionsMs = options;
-
-                if (optionsMs) {
-                  _toMillis(options, 'date');
-
-                  _toMillis(options, 'minDate');
-
-                  _toMillis(options, 'maxDate');
-                }
-
-                return _context.abrupt("return", DatePickerModule.open(options));
-
-              case 3:
-              case "end":
-                return _context.stop();
-            }
+            case 1:
+            case "end":
+              return _context.stop();
           }
-        }, null, this);
-      }
-    }, {
-      key: "dateSetAction",
-      get: function get() {
-        return 'dateSetAction';
-      }
-    }, {
-      key: "dismissedAction",
-      get: function get() {
-        return 'dismissedAction';
-      }
-    }]);
-
-    return DatePickerAndroid;
-  }();
-
+        }
+      }, null, this);
+    }
+  };
   module.exports = DatePickerAndroid;
-},876,[130,21,22,8]);
+},316,[130]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -40271,80 +40587,6 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
-
-  var _createClass = _$$_REQUIRE(_dependencyMap[1]);
-
-  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[2]);
-
-  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[3]);
-
-  var _inherits = _$$_REQUIRE(_dependencyMap[4]);
-
-  var NativeEventEmitter = _$$_REQUIRE(_dependencyMap[5]);
-
-  var NativeModules = _$$_REQUIRE(_dependencyMap[6]);
-
-  var Platform = _$$_REQUIRE(_dependencyMap[7]);
-
-  var invariant = _$$_REQUIRE(_dependencyMap[8]);
-
-  var LinkingManager = NativeModules.IntentAndroid;
-
-  var Linking = function (_NativeEventEmitter) {
-    _inherits(Linking, _NativeEventEmitter);
-
-    function Linking() {
-      _classCallCheck(this, Linking);
-
-      return _possibleConstructorReturn(this, _getPrototypeOf(Linking).call(this, LinkingManager));
-    }
-
-    _createClass(Linking, [{
-      key: "addEventListener",
-      value: function addEventListener(type, handler) {
-        this.addListener(type, handler);
-      }
-    }, {
-      key: "removeEventListener",
-      value: function removeEventListener(type, handler) {
-        this.removeListener(type, handler);
-      }
-    }, {
-      key: "openURL",
-      value: function openURL(url) {
-        this._validateURL(url);
-
-        return LinkingManager.openURL(url);
-      }
-    }, {
-      key: "canOpenURL",
-      value: function canOpenURL(url) {
-        this._validateURL(url);
-
-        return LinkingManager.canOpenURL(url);
-      }
-    }, {
-      key: "getInitialURL",
-      value: function getInitialURL() {
-        return LinkingManager.getInitialURL();
-      }
-    }, {
-      key: "_validateURL",
-      value: function _validateURL(url) {
-        invariant(typeof url === 'string', 'Invalid URL: should be a string. Was: ' + url);
-        invariant(url, 'Invalid URL: cannot be empty');
-      }
-    }]);
-
-    return Linking;
-  }(NativeEventEmitter);
-
-  module.exports = new Linking();
-},297,[21,22,34,37,40,112,8,853,6]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
   var Map = _$$_REQUIRE(_dependencyMap[0]);
 
   var NativeEventEmitter = _$$_REQUIRE(_dependencyMap[1]);
@@ -40362,8 +40604,8 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var _isConnectedDeprecated;
 
   {
-    _isConnectedDeprecated = function _isConnectedDeprecated(connectionType) {
-      return connectionType !== 'NONE' && connectionType !== 'UNKNOWN';
+    _isConnectedDeprecated = function _isConnectedDeprecated(reachability) {
+      return reachability !== 'none' && reachability !== 'unknown';
     };
   }
 
@@ -40460,11 +40702,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       }
     },
     isConnectionExpensive: function isConnectionExpensive() {
-      return RCTNetInfo.isConnectionMetered();
+      return Promise.reject(new Error('Currently not supported on iOS'));
     }
   };
   module.exports = NetInfo;
-},318,[88,112,8,853]);
+},318,[88,112,8,50]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -40722,24 +40964,66 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
+  var _extends = _$$_REQUIRE(_dependencyMap[0]);
+
+  var RCTDeviceEventEmitter = _$$_REQUIRE(_dependencyMap[1]);
+
+  var RCTSettingsManager = _$$_REQUIRE(_dependencyMap[2]).SettingsManager;
+
+  var invariant = _$$_REQUIRE(_dependencyMap[3]);
+
+  var subscriptions = [];
   var Settings = {
+    _settings: RCTSettingsManager && RCTSettingsManager.settings,
     get: function get(key) {
-      console.warn('Settings is not yet supported on Android');
-      return null;
+      return this._settings[key];
     },
     set: function set(settings) {
-      console.warn('Settings is not yet supported on Android');
+      this._settings = _extends(this._settings, settings);
+      RCTSettingsManager.setValues(settings);
     },
     watchKeys: function watchKeys(keys, callback) {
-      console.warn('Settings is not yet supported on Android');
-      return -1;
+      if (typeof keys === 'string') {
+        keys = [keys];
+      }
+
+      invariant(Array.isArray(keys), 'keys should be a string or array of strings');
+      var sid = subscriptions.length;
+      subscriptions.push({
+        keys: keys,
+        callback: callback
+      });
+      return sid;
     },
     clearWatch: function clearWatch(watchId) {
-      console.warn('Settings is not yet supported on Android');
+      if (watchId < subscriptions.length) {
+        subscriptions[watchId] = {
+          keys: [],
+          callback: null
+        };
+      }
+    },
+    _sendObservations: function _sendObservations(body) {
+      var _this = this;
+
+      Object.keys(body).forEach(function (key) {
+        var newValue = body[key];
+        var didChange = _this._settings[key] !== newValue;
+        _this._settings[key] = newValue;
+
+        if (didChange) {
+          subscriptions.forEach(function (sub) {
+            if (sub.keys.indexOf(key) !== -1 && sub.callback) {
+              sub.callback();
+            }
+          });
+        }
+      });
     }
   };
+  RCTDeviceEventEmitter.addListener('settingsUpdated', Settings._sendObservations.bind(Settings));
   module.exports = Settings;
-},877,[]);
+},320,[3,33,8,6]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -40772,8 +41056,24 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
         invariant(typeof content.url === 'string' || typeof content.message === 'string', 'At least one of URL and message is required');
         invariant(typeof options === 'object' && options !== null, 'Options must be a valid object');
         {
-          invariant(!content.title || typeof content.title === 'string', 'Invalid title: title should be a string.');
-          return ShareModule.share(content, options.dialogTitle);
+          return new Promise(function (resolve, reject) {
+            ActionSheetManager.showShareActionSheetWithOptions(_objectSpread({}, content, options, {
+              tintColor: processColor(options.tintColor)
+            }), function (error) {
+              return reject(error);
+            }, function (success, activityType) {
+              if (success) {
+                resolve({
+                  action: 'sharedAction',
+                  activityType: activityType
+                });
+              } else {
+                resolve({
+                  action: 'dismissedAction'
+                });
+              }
+            });
+          });
         }
       }
     }, {
@@ -40792,63 +41092,62 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }();
 
   module.exports = Share;
-},321,[48,21,22,853,6,74,8]);
+},321,[48,21,22,50,6,74,8]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var NativeEventEmitter = _$$_REQUIRE(_dependencyMap[0]);
+  var _classCallCheck = _$$_REQUIRE(_dependencyMap[0]);
 
-  module.exports = new NativeEventEmitter('StatusBarManager');
-},878,[112]);
+  var _possibleConstructorReturn = _$$_REQUIRE(_dependencyMap[1]);
+
+  var _getPrototypeOf = _$$_REQUIRE(_dependencyMap[2]);
+
+  var _inherits = _$$_REQUIRE(_dependencyMap[3]);
+
+  var NativeEventEmitter = _$$_REQUIRE(_dependencyMap[4]);
+
+  var _require = _$$_REQUIRE(_dependencyMap[5]),
+      StatusBarManager = _require.StatusBarManager;
+
+  var StatusBarIOS = function (_NativeEventEmitter) {
+    _inherits(StatusBarIOS, _NativeEventEmitter);
+
+    function StatusBarIOS() {
+      _classCallCheck(this, StatusBarIOS);
+
+      return _possibleConstructorReturn(this, _getPrototypeOf(StatusBarIOS).apply(this, arguments));
+    }
+
+    return StatusBarIOS;
+  }(NativeEventEmitter);
+
+  module.exports = new StatusBarIOS(StatusBarManager);
+},322,[21,34,37,40,112,8]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
   var _regeneratorRuntime = _$$_REQUIRE(_dependencyMap[0]);
 
-  var _classCallCheck = _$$_REQUIRE(_dependencyMap[1]);
+  var TimePickerAndroid = {
+    open: function open(options) {
+      return _regeneratorRuntime.async(function open$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              return _context.abrupt("return", Promise.reject({
+                message: 'TimePickerAndroid is not supported on this platform.'
+              }));
 
-  var _createClass = _$$_REQUIRE(_dependencyMap[2]);
-
-  var TimePickerModule = _$$_REQUIRE(_dependencyMap[3]).TimePickerAndroid;
-
-  var TimePickerAndroid = function () {
-    function TimePickerAndroid() {
-      _classCallCheck(this, TimePickerAndroid);
-    }
-
-    _createClass(TimePickerAndroid, null, [{
-      key: "open",
-      value: function open(options) {
-        return _regeneratorRuntime.async(function open$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                return _context.abrupt("return", TimePickerModule.open(options));
-
-              case 1:
-              case "end":
-                return _context.stop();
-            }
+            case 1:
+            case "end":
+              return _context.stop();
           }
-        }, null, this);
-      }
-    }, {
-      key: "timeSetAction",
-      get: function get() {
-        return 'timeSetAction';
-      }
-    }, {
-      key: "dismissedAction",
-      get: function get() {
-        return 'dismissedAction';
-      }
-    }]);
-
-    return TimePickerAndroid;
-  }();
-
+        }
+      }, null, this);
+    }
+  };
   module.exports = TimePickerAndroid;
-},879,[130,21,22,8]);
+},323,[130]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -40858,6 +41157,30 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var _vibrating = false;
   var _id = 0;
+
+  function vibrateByPattern(pattern) {
+    var repeat = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+    if (_vibrating) {
+      return;
+    }
+
+    _vibrating = true;
+
+    if (pattern[0] === 0) {
+      RCTVibration.vibrate();
+      pattern = pattern.slice(1);
+    }
+
+    if (pattern.length === 0) {
+      _vibrating = false;
+      return;
+    }
+
+    setTimeout(function () {
+      return vibrateScheduler(++_id, pattern, repeat, 1);
+    }, pattern[0]);
+  }
 
   function vibrateScheduler(id, pattern, repeat, nextIndex) {
     if (!_vibrating || id !== _id) {
@@ -40885,10 +41208,14 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       var pattern = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 400;
       var repeat = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       {
+        if (_vibrating) {
+          return;
+        }
+
         if (typeof pattern === 'number') {
-          RCTVibration.vibrate(pattern);
+          RCTVibration.vibrate();
         } else if (Array.isArray(pattern)) {
-          RCTVibration.vibrateByPattern(pattern, repeat ? 0 : -1);
+          vibrateByPattern(pattern, repeat);
         } else {
           throw new Error('Vibration pattern should be a number or array');
         }
@@ -40896,24 +41223,27 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     },
     cancel: function cancel() {
       {
-        RCTVibration.cancel();
+        _vibrating = false;
       }
     }
   };
   module.exports = Vibration;
-},324,[8,853]);
+},324,[8,50]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
-  var warning = _$$_REQUIRE(_dependencyMap[0]);
+  var RCTVibration = _$$_REQUIRE(_dependencyMap[0]).Vibration;
+
+  var invariant = _$$_REQUIRE(_dependencyMap[1]);
 
   var VibrationIOS = {
     vibrate: function vibrate() {
-      warning('VibrationIOS is not supported on this platform!');
+      invariant(arguments[0] === undefined, 'Vibration patterns not supported.');
+      RCTVibration.vibrate();
     }
   };
   module.exports = VibrationIOS;
-},880,[104]);
+},325,[8,6]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -41052,7 +41382,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   module.exports = {
     Platform: {
-      OS: "android"
+      OS: "ios"
     },
     NativeModulesProxy: NativeModulesProxy,
     EventEmitter: EventEmitter,
@@ -55216,7 +55546,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   };
 
   exports.FlatList = FlatListWithGHScroll;
-},410,[1,9,3,21,22,34,37,40,49,48,51,5,172,411,65,881]);
+},410,[1,9,3,21,22,34,37,40,49,48,51,5,172,411,65,412]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   'use strict';
 
@@ -55331,135 +55661,15 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   module.exports = areEqual;
 },411,[]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0]);
-
   Object.defineProperty(exports, "__esModule", {
     value: true
   });
   exports.default = gestureHandlerRootHOC;
 
-  var _classCallCheck2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1]));
-
-  var _createClass2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[2]));
-
-  var _possibleConstructorReturn2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[3]));
-
-  var _getPrototypeOf2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[4]));
-
-  var _inherits2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[5]));
-
-  var _objectSpread2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[6]));
-
-  var _react = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[7]));
-
-  var _reactNative = _$$_REQUIRE(_dependencyMap[8]);
-
-  var _hoistNonReactStatics = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[9]));
-
-  var iface = {
-    name: 'GestureHandlerRootView',
-    propTypes: (0, _objectSpread2.default)({}, _reactNative.ViewPropTypes)
-  };
-  var GestureHandlerRootView = (0, _reactNative.requireNativeComponent)('GestureHandlerRootView', iface);
-
   function gestureHandlerRootHOC(Component) {
-    var containerStyles = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
-
-    var Wrapper = function (_React$Component) {
-      (0, _inherits2.default)(Wrapper, _React$Component);
-
-      function Wrapper() {
-        (0, _classCallCheck2.default)(this, Wrapper);
-        return (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(Wrapper).apply(this, arguments));
-      }
-
-      (0, _createClass2.default)(Wrapper, [{
-        key: "render",
-        value: function render() {
-          return _react.default.createElement(GestureHandlerRootView, {
-            style: [styles.container, containerStyles]
-          }, _react.default.createElement(Component, this.props));
-        }
-      }]);
-      return Wrapper;
-    }(_react.default.Component);
-
-    (0, _hoistNonReactStatics.default)(Wrapper, Component);
-    return Wrapper;
+    return Component;
   }
-
-  var styles = _reactNative.StyleSheet.create({
-    container: {
-      flex: 1
-    }
-  });
-},881,[1,21,22,34,37,40,48,51,5,882]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  'use strict';
-
-  var REACT_STATICS = {
-    childContextTypes: true,
-    contextTypes: true,
-    defaultProps: true,
-    displayName: true,
-    getDefaultProps: true,
-    getDerivedStateFromProps: true,
-    mixins: true,
-    propTypes: true,
-    type: true
-  };
-  var KNOWN_STATICS = {
-    name: true,
-    length: true,
-    prototype: true,
-    caller: true,
-    callee: true,
-    arguments: true,
-    arity: true
-  };
-  var defineProperty = Object.defineProperty;
-  var getOwnPropertyNames = Object.getOwnPropertyNames;
-  var getOwnPropertySymbols = Object.getOwnPropertySymbols;
-  var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-  var getPrototypeOf = Object.getPrototypeOf;
-  var objectPrototype = getPrototypeOf && getPrototypeOf(Object);
-
-  function hoistNonReactStatics(targetComponent, sourceComponent, blacklist) {
-    if (typeof sourceComponent !== 'string') {
-      if (objectPrototype) {
-        var inheritedComponent = getPrototypeOf(sourceComponent);
-
-        if (inheritedComponent && inheritedComponent !== objectPrototype) {
-          hoistNonReactStatics(targetComponent, inheritedComponent, blacklist);
-        }
-      }
-
-      var keys = getOwnPropertyNames(sourceComponent);
-
-      if (getOwnPropertySymbols) {
-        keys = keys.concat(getOwnPropertySymbols(sourceComponent));
-      }
-
-      for (var i = 0; i < keys.length; ++i) {
-        var key = keys[i];
-
-        if (!REACT_STATICS[key] && !KNOWN_STATICS[key] && (!blacklist || !blacklist[key])) {
-          var descriptor = getOwnPropertyDescriptor(sourceComponent, key);
-
-          try {
-            defineProperty(targetComponent, key, descriptor);
-          } catch (e) {}
-        }
-      }
-
-      return targetComponent;
-    }
-
-    return targetComponent;
-  }
-
-  module.exports = hoistNonReactStatics;
-},882,[]);
+},412,[]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0]);
 
@@ -60423,10 +60633,10 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     module: _$$_REQUIRE(_dependencyMap[0]),
     component: _$$_REQUIRE(_dependencyMap[1])
   };
-},441,[883,884]);
+},441,[442,445]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   module.exports = _$$_REQUIRE(_dependencyMap[0]);
-},883,[443]);
+},442,[443]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _extends = Object.assign || function (target) {
     for (var i = 1; i < arguments.length; i++) {
@@ -60627,7 +60837,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 },444,[]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   module.exports = _$$_REQUIRE(_dependencyMap[0]);
-},884,[446]);
+},445,[446]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _extends = Object.assign || function (target) {
     for (var i = 1; i < arguments.length; i++) {
@@ -60799,7 +61009,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }
 
   module.exports = SafeComponentCreate;
-},446,[5,444,883]);
+},446,[5,444,442]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireWildcard = _$$_REQUIRE(_dependencyMap[0]);
 
@@ -61608,7 +61818,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     }
 
   };
-},453,[885]);
+},453,[454]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireWildcard = _$$_REQUIRE(_dependencyMap[0]);
 
@@ -61619,17 +61829,21 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   });
   exports.default = undefined;
 
-  var _classCallCheck2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[2]));
+  var _objectSpread2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[2]));
 
-  var _expoCore = _$$_REQUIRE(_dependencyMap[3]);
+  var _classCallCheck2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[3]));
 
-  var _checkArgs = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[4]));
+  var _expoCore = _$$_REQUIRE(_dependencyMap[4]);
 
-  var _checkInit = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[5]));
+  var _processTheme = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[5]));
 
-  var types = _interopRequireWildcard(_$$_REQUIRE(_dependencyMap[6]));
+  var _checkArgs = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[6]));
 
-  var StripeModule = _expoCore.NativeModulesProxy.StripeModule;
+  var _checkInit = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[7]));
+
+  var types = _interopRequireWildcard(_$$_REQUIRE(_dependencyMap[8]));
+
+  var TPSStripeManager = _expoCore.NativeModulesProxy.TPSStripeManager;
 
   var Stripe = function Stripe() {
     var _this = this;
@@ -61641,57 +61855,109 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       (0, _checkArgs.default)(types.setOptionsOptionsPropTypes, options, 'options', 'Stripe.setOptions');
       _this.stripeInitialized = true;
-      return StripeModule.init(options);
+      return TPSStripeManager.init(options);
     };
 
-    this.deviceSupportsAndroidPayAsync = function () {
-      return StripeModule.deviceSupportsAndroidPay();
+    this.deviceSupportsApplePayAsync = function () {
+      return TPSStripeManager.deviceSupportsApplePay();
     };
 
-    this.canMakeAndroidPayPaymentsAsync = function () {
-      return StripeModule.canMakeAndroidPayPayments();
-    };
-
-    this.paymentRequestWithAndroidPayAsync = function () {
+    this.canMakeApplePayPaymentsAsync = function () {
       var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      (0, _checkArgs.default)(types.canMakeApplePayPaymentsOptionsPropTypes, options, 'options', 'Stripe.canMakeApplePayPayments');
+      return TPSStripeManager.canMakeApplePayPayments(options);
+    };
+
+    this.paymentRequestWithApplePayAsync = function () {
+      var items = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       (0, _checkInit.default)(_this);
-      (0, _checkArgs.default)(types.paymentRequestWithAndroidPayOptionsPropTypes, options, 'options', 'Stripe.paymentRequestWithAndroidPay');
-      return StripeModule.paymentRequestWithAndroidPay(options);
+      return TPSStripeManager.paymentRequestWithApplePay(items, options);
+    };
+
+    this.completeApplePayRequestAsync = function () {
+      (0, _checkInit.default)(_this);
+      return TPSStripeManager.completeApplePayRequest();
+    };
+
+    this.cancelApplePayRequestAsync = function () {
+      (0, _checkInit.default)(_this);
+      return TPSStripeManager.cancelApplePayRequest();
+    };
+
+    this.openApplePaySetupAsync = function () {
+      return TPSStripeManager.openApplePaySetup();
     };
 
     this.paymentRequestWithCardFormAsync = function () {
       var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       (0, _checkInit.default)(_this);
       (0, _checkArgs.default)(types.paymentRequestWithCardFormOptionsPropTypes, options, 'options', 'Stripe.paymentRequestWithCardForm');
-      return StripeModule.paymentRequestWithCardForm(options);
+      return TPSStripeManager.paymentRequestWithCardForm((0, _objectSpread2.default)({}, options, {
+        theme: (0, _processTheme.default)(options.theme)
+      }));
     };
 
     this.createTokenWithCardAsync = function () {
       var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       (0, _checkInit.default)(_this);
       (0, _checkArgs.default)(types.createTokenWithCardParamsPropTypes, params, 'params', 'Stripe.createTokenWithCard');
-      return StripeModule.createTokenWithCard(params);
+      return TPSStripeManager.createTokenWithCard(params);
     };
 
     this.createTokenWithBankAccountAsync = function () {
       var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       (0, _checkInit.default)(_this);
       (0, _checkArgs.default)(types.createTokenWithBankAccountParamsPropTypes, params, 'params', 'Stripe.createTokenWithBankAccount');
-      return StripeModule.createTokenWithBankAccount(params);
+      return TPSStripeManager.createTokenWithBankAccount(params);
     };
 
     this.createSourceWithParamsAsync = function () {
       var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
       (0, _checkInit.default)(_this);
       (0, _checkArgs.default)(types.createSourceWithParamsPropType, params, 'params', 'Stripe.createSourceWithParams');
-      return StripeModule.createSourceWithParams(params);
+      return TPSStripeManager.createSourceWithParams(params);
     };
+
+    if (TPSStripeManager) {
+      this.TPSErrorDomain = TPSStripeManager.TPSErrorDomain;
+      this.TPSErrorCodeApplePayNotConfigured = TPSStripeManager.TPSErrorCodeApplePayNotConfigured;
+      this.TPSErrorCodePreviousRequestNotCompleted = TPSStripeManager.TPSErrorCodePreviousRequestNotCompleted;
+      this.TPSErrorCodeUserCancel = TPSStripeManager.TPSErrorCodeUserCancel;
+    }
   };
 
   var _default = new Stripe();
 
   exports.default = _default;
-},885,[383,1,21,331,456,457,458]);
+},454,[383,1,48,21,331,455,456,457,458]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0]);
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.default = processTheme;
+
+  var _defineProperty2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1]));
+
+  var _objectSpread3 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[2]));
+
+  var _processColor = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[3]));
+
+  function processTheme() {
+    var theme = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    return Object.keys(theme).reduce(function (result, key) {
+      var value = theme[key];
+
+      if (key.toLowerCase().endsWith('color')) {
+        value = (0, _processColor.default)(value);
+      }
+
+      return (0, _objectSpread3.default)({}, result, (0, _defineProperty2.default)({}, key, value));
+    }, {});
+  }
+},455,[1,49,48,74]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0]);
 
@@ -101726,21 +101992,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       key: "render",
       value: function render() {
         var _this$props = this.props,
-            tint = _this$props.tint,
-            props = (0, _objectWithoutProperties2.default)(_this$props, ["tint"]);
-        var backgroundColor;
-
-        if (tint === 'dark') {
-          backgroundColor = 'rgba(0,0,0,0.5)';
-        } else if (tint === 'light') {
-          backgroundColor = 'rgba(255,255,255,0.7)';
-        } else {
-          backgroundColor = 'rgba(255,255,255,0.4)';
-        }
-
-        return React.createElement(_reactNative.View, (0, _extends2.default)({}, props, {
-          style: [this.props.style, {
-            backgroundColor: backgroundColor
+            style = _this$props.style,
+            props = (0, _objectWithoutProperties2.default)(_this$props, ["style"]);
+        return React.createElement(NativeBlurView, (0, _extends2.default)({}, props, {
+          style: [style, {
+            backgroundColor: 'transparent'
           }]
         }));
       }
@@ -101749,10 +102005,16 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   }(React.Component);
 
   exports.default = BlurView;
-  BlurView.propTypes = (0, _objectSpread2.default)({
-    tint: _propTypes.default.oneOf(['light', 'default', 'dark'])
-  }, _reactNative.ViewPropTypes);
-},886,[383,1,48,3,9,21,22,34,37,40,65,51,5]);
+  BlurView.propTypes = (0, _objectSpread2.default)({}, _reactNative.ViewPropTypes, {
+    tint: _propTypes.default.oneOf(['light', 'default', 'dark']).isRequired,
+    intensity: _propTypes.default.number.isRequired
+  });
+  BlurView.defaultProps = {
+    tint: 'default',
+    intensity: 50
+  };
+  var NativeBlurView = (0, _reactNative.requireNativeComponent)('ExponentBlurView', BlurView);
+},832,[383,1,48,3,9,21,22,34,37,40,65,51,5]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0]);
 
@@ -101830,7 +102092,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   function _normalizePoint(point) {
     return Array.isArray(point) ? point : [point.x, point.y];
   }
-},833,[1,48,3,9,21,22,34,37,40,65,51,5,887]);
+},833,[1,48,3,9,21,22,34,37,40,65,51,5,834]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0]);
 
@@ -101841,28 +102103,24 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
 
   var _objectSpread2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[1]));
 
-  var _extends2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[2]));
+  var _classCallCheck2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[2]));
 
-  var _objectWithoutProperties2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[3]));
+  var _createClass2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[3]));
 
-  var _classCallCheck2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[4]));
+  var _possibleConstructorReturn2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[4]));
 
-  var _createClass2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[5]));
+  var _getPrototypeOf2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[5]));
 
-  var _possibleConstructorReturn2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[6]));
+  var _inherits2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[6]));
 
-  var _getPrototypeOf2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[7]));
+  var _propTypes = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[7]));
 
-  var _inherits2 = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[8]));
+  var _react = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[8]));
 
-  var _propTypes = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[9]));
+  var _reactNative = _$$_REQUIRE(_dependencyMap[9]);
 
-  var _react = _interopRequireDefault(_$$_REQUIRE(_dependencyMap[10]));
-
-  var _reactNative = _$$_REQUIRE(_dependencyMap[11]);
-
-  var NativeLinearGradient = function (_React$Component) {
-    (0, _inherits2.default)(NativeLinearGradient, _React$Component);
+  var NativeLinearGradient = function (_React$PureComponent) {
+    (0, _inherits2.default)(NativeLinearGradient, _React$PureComponent);
 
     function NativeLinearGradient() {
       (0, _classCallCheck2.default)(this, NativeLinearGradient);
@@ -101872,37 +102130,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
     (0, _createClass2.default)(NativeLinearGradient, [{
       key: "render",
       value: function render() {
-        var _this$props = this.props,
-            colors = _this$props.colors,
-            locations = _this$props.locations,
-            startPoint = _this$props.startPoint,
-            endPoint = _this$props.endPoint,
-            children = _this$props.children,
-            style = _this$props.style,
-            props = (0, _objectWithoutProperties2.default)(_this$props, ["colors", "locations", "startPoint", "endPoint", "children", "style"]);
-        var flatStyle = _reactNative.StyleSheet.flatten(style) || {};
-        var borderRadius = flatStyle.borderRadius || 0;
-        var borderRadiiPerCorner = [flatStyle.borderTopLeftRadius || borderRadius, flatStyle.borderTopLeftRadius || borderRadius, flatStyle.borderTopRightRadius || borderRadius, flatStyle.borderTopRightRadius || borderRadius, flatStyle.borderBottomRightRadius || borderRadius, flatStyle.borderBottomRightRadius || borderRadius, flatStyle.borderBottomLeftRadius || borderRadius, flatStyle.borderBottomLeftRadius || borderRadius];
-        return _react.default.createElement(_reactNative.View, (0, _extends2.default)({}, props, {
-          style: style
-        }), _react.default.createElement(BaseNativeLinearGradient, {
-          style: {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            bottom: 0,
-            right: 0
-          },
-          colors: colors,
-          startPoint: startPoint,
-          endPoint: endPoint,
-          locations: locations,
-          borderRadii: borderRadiiPerCorner
-        }), children);
+        return _react.default.createElement(BaseNativeLinearGradient, this.props);
       }
     }]);
     return NativeLinearGradient;
-  }(_react.default.Component);
+  }(_react.default.PureComponent);
 
   exports.default = NativeLinearGradient;
   var BaseNativeLinearGradient = (0, _reactNative.requireNativeComponent)('ExponentLinearGradient', {
@@ -101910,11 +102142,10 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       colors: _propTypes.default.arrayOf(_propTypes.default.number),
       locations: _propTypes.default.arrayOf(_propTypes.default.number),
       startPoint: _propTypes.default.arrayOf(_propTypes.default.number),
-      endPoint: _propTypes.default.arrayOf(_propTypes.default.number),
-      borderRadii: _propTypes.default.arrayOf(_propTypes.default.number)
+      endPoint: _propTypes.default.arrayOf(_propTypes.default.number)
     })
   });
-},887,[1,48,3,9,21,22,34,37,40,65,51,5]);
+},834,[1,48,21,22,34,37,40,65,51,5]);
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0]);
 
@@ -103244,9 +103475,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       value: function render() {
         return _react.default.createElement(_reactNative.View, {
           style: styles.container
-        }, _react.default.createElement(_reactNative.Image, {
-          source: _$$_REQUIRE(_dependencyMap[8])
-        }), _react.default.createElement(_reactNative.Text, null, "sswswq"));
+        }, _react.default.createElement(_reactNative.Text, null, "sswswq"));
       }
     }]);
     return App;
@@ -103262,20 +103491,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       justifyContent: 'center'
     }
   });
-},850,[1,21,22,34,37,40,51,5,851]);
-__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  module.exports = _$$_REQUIRE(_dependencyMap[0]).registerAsset({
-    "__packager_asset": true,
-    "httpServerLocation": "/assets/assets",
-    "width": 640,
-    "height": 1136,
-    "scales": [1],
-    "hash": "22b9c957439f4ccbe65beca2588ca336",
-    "name": "1",
-    "type": "png",
-    "fileHashes": ["22b9c957439f4ccbe65beca2588ca336"]
-  });
-},851,[153]);
+},850,[1,21,22,34,37,40,51,5]);
 __r(85);
 __r(0);
-//# sourceMappingURL=http://127.0.0.1:19001/node_modules/expo/AppEntry.map?dev=false&hot=false&assetPlugin=%2FUsers%2Fhellopyj%2FDesktop%2Fdd%2Fmy-new-project%2Fnode_modules%2Fexpo%2Ftools%2FhashAssetFiles.js&platform=android
+//# sourceMappingURL=http://127.0.0.1:19001/node_modules/expo/AppEntry.map?dev=false&hot=false&assetPlugin=%2FUsers%2Fhellopyj%2FDesktop%2Fdd%2Fmy-new-project%2Fnode_modules%2Fexpo%2Ftools%2FhashAssetFiles.js&platform=ios
