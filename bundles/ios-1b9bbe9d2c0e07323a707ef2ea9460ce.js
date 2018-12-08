@@ -103475,7 +103475,9 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       value: function render() {
         return _react.default.createElement(_reactNative.View, {
           style: styles.container
-        }, _react.default.createElement(_reactNative.Text, null, "\u54C8\u54C8\u54C8\u8DDF\u65B0\u4E86!"));
+        }, _react.default.createElement(_reactNative.Image, {
+          source: _$$_REQUIRE(_dependencyMap[8])
+        }), _react.default.createElement(_reactNative.Text, null, "sss"));
       }
     }]);
     return App;
@@ -103491,7 +103493,20 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       justifyContent: 'center'
     }
   });
-},850,[1,21,22,34,37,40,51,5]);
+},850,[1,21,22,34,37,40,51,5,851]);
+__d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  module.exports = _$$_REQUIRE(_dependencyMap[0]).registerAsset({
+    "__packager_asset": true,
+    "httpServerLocation": "/assets/assets",
+    "width": 640,
+    "height": 1136,
+    "scales": [1],
+    "hash": "22b9c957439f4ccbe65beca2588ca336",
+    "name": "1",
+    "type": "png",
+    "fileHashes": ["22b9c957439f4ccbe65beca2588ca336"]
+  });
+},851,[153]);
 __r(85);
 __r(0);
 //# sourceMappingURL=http://127.0.0.1:19001/node_modules/expo/AppEntry.map?dev=false&hot=false&assetPlugin=%2FUsers%2Fhellopyj%2FDesktop%2Fdd%2Fmy-new-project%2Fnode_modules%2Fexpo%2Ftools%2FhashAssetFiles.js&platform=ios
