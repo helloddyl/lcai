@@ -103477,7 +103477,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           style: styles.container
         }, _react.default.createElement(_reactNative.Image, {
           source: _$$_REQUIRE(_dependencyMap[8])
-        }), _react.default.createElement(_reactNative.Text, null, "sss"));
+        }), _react.default.createElement(_reactNative.Text, null, "sswswq"));
       }
     }]);
     return App;
